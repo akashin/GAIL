@@ -1,2 +1,2 @@
-# ContestRL
-Reinforcement Learning for programming contests
+# Game AI Library
+Library for implementing agents for playing games
