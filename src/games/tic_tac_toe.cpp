@@ -31,6 +31,16 @@ struct TicTacToeState {
   array<array<int, ColCount>, RowCount> field;
 };
 
+std::ostream& operator << (std::ostream& os, const TicTacToeState& state) {
+  for (int row = 0; row < RowCount; ++row) {
+      for (int col = 0; col < ColCount; ++col) {
+          os << state.field[row][col] << " ";
+      }
+      os << endl;
+  }
+  return os;
+}
+
 struct TicTacToeAction {
   TicTacToeAction(int player_id, int row, int col) : player_id(player_id), row(row), col(col) {}
 
@@ -64,6 +74,7 @@ private:
     if (row < 0 || col < 0 || row >= RowCount || col >= ColCount) {
       return false;
     }
+    return true;
   }
 
   void checkWinner() {
@@ -124,6 +135,10 @@ private:
 
 int main() {
   TicTacToeGame game;
-  cout << "Hello, world" << endl;
+  cerr << game.getState() << endl;
+  game.makeAction(TicTacToeAction(1, 1, 1));
+  cerr << game.getState() << endl;
+  game.makeAction(TicTacToeAction(2, 1, 2));
+  cerr << game.getState() << endl;
   return 0;
 }
