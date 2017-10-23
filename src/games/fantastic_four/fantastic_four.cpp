@@ -11,8 +11,8 @@
 using namespace gail::fantastic_four;
 
 int main() {
-  StreamGame game(std::cin, std::cout);
+  StreamClient client(std::cin, std::cout);
   RandomPlayer player;
-  game.makeAction(player.takeAction(game.getState()));
+  client.makeAction(player.takeAction(client.getState()));
   return 0;
 }

@@ -6,6 +6,7 @@
 #define GAIL_CLIENTS_HPP
 
 #include "fantastic_four.hpp"
+#include "simulator.hpp"
 
 namespace gail {
 namespace fantastic_four {
@@ -25,9 +26,9 @@ struct PlayerAction {
   int column;
 };
 
-class StreamGame {
+class StreamClient {
 public:
-  StreamGame(std::istream& state_input_stream, std::ostream& action_output_stream)
+  StreamClient(std::istream& state_input_stream, std::ostream& action_output_stream)
       : state_input_stream(state_input_stream), action_output_stream(action_output_stream) {
     readState();
     state_input_stream >> state.player_id;
@@ -60,6 +61,37 @@ private:
   std::istream& state_input_stream;
   std::ostream& action_output_stream;
 
+};
+
+class SimulatorClient {
+public:
+  explicit SimulatorClient(int player_id)
+      : player_id(player_id) {
+    state.player_id = player_id;
+  }
+
+  PlayerState getState() {
+    if (!state_refreshed) {
+      readState();
+      state_refreshed = true;
+    }
+    return state;
+  }
+
+  void makeAction(const PlayerAction& action) {
+    simulator.makeAction(Action(player_id, action.column));
+  }
+
+private:
+  void readState() {
+    state.winner = simulator.getState().winner;
+    state.field = simulator.getState().field;
+  }
+
+  bool state_refreshed = false;
+  PlayerState state;
+  int player_id;
+  Simulator simulator;
 };
 
 }; // namespace fantastic_four

@@ -21,6 +21,9 @@ struct State {
 };
 
 struct Action {
+  Action(int player_id, int column)
+      : player_id(player_id), column(column) {}
+
   int player_id;
   int column;
 };
@@ -30,7 +33,9 @@ public:
   Simulator() = default;
 
   explicit Simulator(const Field& field)
-      : field(field) {}
+      : field(field) {
+    expected_player_id = deduceExpectedPlayer(field);
+  }
 
   void makeAction(const Action& action) {
     validateAction(action);
@@ -61,6 +66,19 @@ public:
   }
 
 private:
+  static int deduceExpectedPlayer(const Field& field) {
+    std::array<int, 3> counts{};
+    for (int row = 0; row < H; ++row) {
+      for (int column = 0; column < W; ++column) {
+        ++counts[field[row][column]];
+      }
+    }
+    if (counts[FIRST_PLAYER] <= counts[SECOND_PLAYER]) {
+      return FIRST_PLAYER;
+    }
+    return SECOND_PLAYER;
+  }
+
   void validateAction(const Action& action) {
     if (action.player_id != expected_player_id) {
       throw std::logic_error("Wrong player id, expected: " + std::to_string(expected_player_id) +
@@ -114,7 +132,7 @@ private:
 
   int turn = 0;
   int winner = NO_PLAYER;
-  int expected_player_id = FIRST_PLAYER;
+  int expected_player_id = NO_PLAYER;
   Field field{};
 };
 
