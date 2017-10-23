@@ -2,10 +2,12 @@
 // Created by acid on 10/23/17.
 //
 
-#include "fantastic_four.hpp"
-#include "../core/player.hpp"
+#ifndef GAIL_RANDOM_PLAYER_HPP
+#define GAIL_RANDOM_PLAYER_HPP
 
-#include <iostream>
+#include "fantastic_four.hpp"
+#include "../../core/player.hpp"
+
 #include <random>
 
 namespace gail {
@@ -28,11 +30,5 @@ private:
 }; // namespace fantastic_four
 }; // namespace gail
 
-using namespace gail::fantastic_four;
 
-int main() {
-  StreamGame game(std::cin, std::cout);
-  RandomPlayer player;
-  game.makeAction(player.takeAction(game.getState()));
-  return 0;
-}
+#endif //GAIL_RANDOM_PLAYER_HPP
