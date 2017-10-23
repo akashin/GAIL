@@ -4,9 +4,9 @@
 #include <iostream>
 #include <array>
 #include <sstream>
-#include "../core/game.hpp"
+#include "../../core/game.hpp"
 #include "tic_tac_toe.hpp"
-#include "../core/player.hpp"
+#include "../../core/player.hpp"
 
 using namespace std;
 

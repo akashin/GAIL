@@ -7,7 +7,7 @@
 
 #include <ostream>
 #include <array>
-#include "../core/game.hpp"
+#include "../../core/game.hpp"
 
 namespace gail {
 namespace tic_tac_toe {
