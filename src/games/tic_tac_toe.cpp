@@ -14,16 +14,8 @@ namespace gail {
 namespace tic_tac_toe {
 
 struct PlayerGameState {
-  PlayerGameState() {
-    for (int i = 0; i < RowCount; ++i) {
-      for (int j = 0; j < ColCount; ++j) {
-        field[i][j] = NO_PLAYER;
-      }
-    }
-  }
-
   int player_id = NO_PLAYER;
-  array<array<int, ColCount>, RowCount> field;
+  array<array<int, ColCount>, RowCount> field{};
 };
 
 struct PlayerAction {

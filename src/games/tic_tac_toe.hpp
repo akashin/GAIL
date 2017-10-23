@@ -24,18 +24,10 @@ const int RowCount = 3;
 const int ColCount = 3;
 
 struct State {
-  State() {
-    for (int i = 0; i < RowCount; ++i) {
-      for (int j = 0; j < ColCount; ++j) {
-        field[i][j] = NO_PLAYER;
-      }
-    }
-  }
-
   int turn = 0;
   int winner = NO_PLAYER;
   int expected_player_id = FIRST_PLAYER;
-  std::array <std::array<int, ColCount>, RowCount> field;
+  std::array <std::array<int, ColCount>, RowCount> field{};
 };
 
 struct Action {
