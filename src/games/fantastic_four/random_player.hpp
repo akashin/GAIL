@@ -7,6 +7,7 @@
 
 #include "fantastic_four.hpp"
 #include "../../core/player.hpp"
+#include "clients.hpp"
 
 #include <random>
 
@@ -18,6 +19,7 @@ public:
   RandomPlayer(): generator(random_device()), action_distribution(0, 7) {}
 
   PlayerAction takeAction(const PlayerState& state) override {
+    // TODO(akashin): Don't select full columns.
     return PlayerAction{action_distribution(generator)};
   }
 
