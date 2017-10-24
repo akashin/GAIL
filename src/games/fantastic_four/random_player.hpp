@@ -19,8 +19,12 @@ public:
   RandomPlayer(): generator(random_device()), action_distribution(0, 7) {}
 
   PlayerAction takeAction(const PlayerState& state) override {
-    // TODO(akashin): Don't select full columns.
-    return PlayerAction{action_distribution(generator)};
+    while (true) {
+      int column = action_distribution(generator);
+      if (state.field[0][column] == NO_PLAYER) {
+        return PlayerAction(column);
+      }
+    }
   }
 
 private:
