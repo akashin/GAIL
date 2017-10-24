@@ -8,8 +8,6 @@
 #include "random_player.hpp"
 #include "tree_search_player.hpp"
 
-#include <iostream>
-
 using namespace gail::fantastic_four;
 
 void playStreamGame() {

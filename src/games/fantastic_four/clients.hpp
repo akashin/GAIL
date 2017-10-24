@@ -24,7 +24,7 @@ struct PlayerState {
 };
 
 struct PlayerAction {
-  PlayerAction(int column)
+  explicit PlayerAction(int column)
       : column(column) {}
 
   int column;

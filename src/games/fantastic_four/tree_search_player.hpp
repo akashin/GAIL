@@ -12,7 +12,7 @@
 namespace gail {
 namespace fantastic_four {
 
-const int INF = 1e9;
+const int INF = static_cast<int>(1e9);
 
 // TODO(akashin): Can we reuse this?
 bool isValid(int row, int column) {
@@ -66,7 +66,7 @@ int scoreState(PlayerState state) {
 
 class TreeSearchPlayer : public Player<PlayerState, PlayerAction> {
 public:
-  TreeSearchPlayer(int player_id)
+  explicit TreeSearchPlayer(int player_id)
       : player_id(player_id) {}
 
   PlayerAction takeAction(const PlayerState& state) override {
@@ -94,8 +94,8 @@ private:
         }
 
         if (actionWithScore.second > bestActionWithScore.second) {
-          bestActionWithScore = actionWithScore;
           bestActionWithScore.first = PlayerAction(column);
+          bestActionWithScore.second = actionWithScore.second;
         }
       }
     }
