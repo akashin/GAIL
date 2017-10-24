@@ -7,6 +7,7 @@
 
 #include "fantastic_four.hpp"
 #include "simulator.hpp"
+#include "../../core/client.hpp"
 
 namespace gail {
 namespace fantastic_four {
@@ -23,10 +24,13 @@ struct PlayerState {
 };
 
 struct PlayerAction {
+  PlayerAction(int column)
+      : column(column) {}
+
   int column;
 };
 
-class StreamClient {
+class StreamClient : public Client<PlayerState, PlayerAction> {
 public:
   StreamClient(std::istream& state_input_stream, std::ostream& action_output_stream)
       : state_input_stream(state_input_stream), action_output_stream(action_output_stream) {
@@ -35,7 +39,24 @@ public:
     state_refreshed = true;
   }
 
-  PlayerState getState() {
+  ~StreamClient() override = default;
+
+  int getScore() override {
+    if (state.winner == NO_PLAYER) {
+      return 0;
+    }
+
+    if (state.winner == state.player_id) {
+      return 1;
+    }
+    return -1;
+  }
+
+  bool isGameFinished() override {
+    return state.winner != NO_PLAYER;
+  }
+
+  PlayerState getState() override {
     if (!state_refreshed) {
       readState();
       state_refreshed = true;
@@ -43,8 +64,9 @@ public:
     return state;
   }
 
-  void makeAction(const PlayerAction& action) {
+  void makeAction(const PlayerAction& action) override {
     action_output_stream << action.column;
+    state_refreshed = false;
   }
 
 private:
@@ -63,14 +85,42 @@ private:
 
 };
 
-class SimulatorClient {
+class SimulatorClient : public Client<PlayerState, PlayerAction> {
 public:
-  explicit SimulatorClient(int player_id)
-      : player_id(player_id) {
+  SimulatorClient(int player_id, Simulator& simulator)
+      : player_id(player_id), simulator(simulator) {
     state.player_id = player_id;
+    readState();
+    state_refreshed = true;
   }
 
-  PlayerState getState() {
+  ~SimulatorClient() override = default;
+
+
+  int getScore() override {
+    if (!state_refreshed) {
+      readState();
+      state_refreshed = true;
+    }
+    if (state.winner == NO_PLAYER) {
+      return 0;
+    }
+
+    if (state.winner == state.player_id) {
+      return 1;
+    }
+    return -1;
+  }
+
+  bool isGameFinished() override {
+    if (!state_refreshed) {
+      readState();
+      state_refreshed = true;
+    }
+    return state.winner != NO_PLAYER;
+  }
+
+  PlayerState getState() override {
     if (!state_refreshed) {
       readState();
       state_refreshed = true;
@@ -78,8 +128,9 @@ public:
     return state;
   }
 
-  void makeAction(const PlayerAction& action) {
+  void makeAction(const PlayerAction& action) override {
     simulator.makeAction(Action(player_id, action.column));
+    state_refreshed = false;
   }
 
 private:
@@ -91,7 +142,7 @@ private:
   bool state_refreshed = false;
   PlayerState state;
   int player_id;
-  Simulator simulator;
+  Simulator& simulator;
 };
 
 }; // namespace fantastic_four
