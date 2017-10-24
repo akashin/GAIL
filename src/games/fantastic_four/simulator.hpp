@@ -30,18 +30,18 @@ struct Action {
 
 class Simulator {
 public:
-  Simulator() = default;
-
   explicit Simulator(const Field& field)
       : field(field) {
     expected_player_id = deduceExpectedPlayer(field);
   }
 
+  Simulator(): Simulator(Field{}) {}
+
   void makeAction(const Action& action) {
     validateAction(action);
 
     int row = -1;
-    while (row + 1 < H && field[row][action.column] == NO_PLAYER) {
+    while (row + 1 < H && field[row + 1][action.column] == NO_PLAYER) {
       ++row;
     }
     if (row == -1) {
@@ -59,6 +59,11 @@ public:
     } else if (expected_player_id == SECOND_PLAYER) {
       expected_player_id = FIRST_PLAYER;
     }
+  }
+
+  bool isValidAction(const Action& action) {
+    // TODO(akashin): Implement this function.
+    return field[0][action.column] == NO_PLAYER;
   }
 
   State getState() {
@@ -102,7 +107,7 @@ private:
           }
 
           bool covered = true;
-          for (int k = 0; k < 3; ++k) {
+          for (int k = 0; k < WIN_LENGTH; ++k) {
             int nRow = row + k * dRow[d];
             int nCol = col + k * dCol[d];
 
