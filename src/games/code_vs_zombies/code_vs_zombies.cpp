@@ -4,14 +4,13 @@
 
 #include "clients.hpp"
 #include "players.hpp"
+#include "../../core/match.hpp"
 
 using namespace gail::code_vs_zombies;
 
 int main() {
   StreamClient client(std::cin, std::cout);
   PickLastHumanPlayer player;
-  while (!client.isGameFinished()) {
-    client.makeAction(player.takeAction(client.getState()));
-  }
+  (void) gail::playMatch<State, Action>({&client}, {&player});
   return 0;
 }

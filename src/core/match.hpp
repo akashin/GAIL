@@ -42,7 +42,7 @@ std::vector<int> playMatch(std::vector<Client<State, Action>*> clients,
     }
   }
 
-  std::cout << "Match lasted for " << turn << " turns" << std::endl;
+  std::cerr << "Match lasted for " << turn << " turns" << std::endl;
 
   std::vector<int> scores;
   for (auto client : clients) {
