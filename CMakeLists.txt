@@ -5,3 +5,4 @@ project(GAIL)
 
 add_executable(tic_tac_toe src/games/tic_tac_toe/tic_tac_toe.cpp)
 add_executable(fantastic_four src/games/fantastic_four/fantastic_four.cpp)
+add_executable(code_vs_zombies src/games/code_vs_zombies/code_vs_zombies.cpp)
