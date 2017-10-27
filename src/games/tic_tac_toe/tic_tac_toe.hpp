@@ -23,17 +23,30 @@ const int DRAW = 3;
 const int RowCount = 3;
 const int ColCount = 3;
 
+using Field = std::array<std::array<int, ColCount>, RowCount>;
+
 struct State {
   int turn = 0;
   int winner = NO_PLAYER;
   int expected_player_id = FIRST_PLAYER;
-  std::array <std::array<int, ColCount>, RowCount> field{};
+  Field field{};
 };
 
 struct Action {
   Action(int player_id, int row, int col) : player_id(player_id), row(row), col(col) {}
 
   int player_id;
+  int row, col;
+};
+
+struct PlayerState {
+  int player_id = NO_PLAYER;
+  Field field{};
+};
+
+struct PlayerAction {
+  PlayerAction(int row, int col) : row(row), col(col) {}
+
   int row, col;
 };
 
