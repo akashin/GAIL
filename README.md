@@ -1,6 +1,16 @@
 # Game AI Library
 Library for implementing agents for playing games
 
+## Goals 
+The library should allow the following:
+- Quickly build a simple bot for online game competition.
+- Allow range of algorithms from normal search to machine learning.
+- Be fast to be used for real game rather then only for prototyping.
+
+Non-goals:
+- Support for multiple languages.
+
+
 ## Code structure
 
 This code in the repository is structured in the following way:
