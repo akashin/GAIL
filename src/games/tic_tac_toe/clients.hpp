@@ -40,7 +40,7 @@ public:
     return state;
   }
 
-  void makeAction(const PlayerAction& action) {
+  void makeAction(const PlayerAction& action) override {
     action_output_stream << action.col << " " << action.row << std::endl;
   }
 
@@ -90,7 +90,7 @@ public:
     return state;
   }
 
-  void makeAction(const PlayerAction& action) {
+  void makeAction(const PlayerAction& action) override {
     game.makeAction(Action(player_id, action.row, action.col));
     state_refreshed = false;
   }

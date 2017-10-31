@@ -12,11 +12,13 @@
 namespace gail {
 namespace code_vs_zombies {
 
-struct Point2D {
-  Point2D() = default;
+const int INVALID_ID = -1;
 
+struct Point2D {
   Point2D(int x, int y)
       : x(x), y(y) {}
+
+  Point2D(): Point2D(0, 0) {}
 
   int x, y;
 };
@@ -32,7 +34,7 @@ struct Human {
   Human(int id, const Point2D& pos)
       : id(id), pos(pos) {}
 
-  int id;
+  int id = INVALID_ID;
   Point2D pos;
 };
 
@@ -42,7 +44,7 @@ struct Zombie {
   Zombie(int id, const Point2D& pos, const Point2D& next_pos)
       : id(id), pos(pos), next_pos(next_pos) {}
 
-  int id;
+  int id = INVALID_ID;
   Point2D pos;
   Point2D next_pos;
 };
