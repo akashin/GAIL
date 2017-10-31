@@ -13,6 +13,8 @@
 
 namespace gail {
 
+// Plays a game between multiple players until none of them have any possible moves.
+// Returns the final scores of each player.
 template <typename State, typename Action>
 std::vector<int> playMatch(std::vector<Client<State, Action>*> clients,
                            std::vector<Player<State, Action>*> players) {

@@ -7,9 +7,11 @@
 
 namespace gail {
 
+// An interface for the player/strategy that plays the game.
 template <typename State, typename Action>
 class Player {
 public:
+  // Returns an action to take in the given state.
   virtual Action takeAction(const State& state) = 0;
 };
 
