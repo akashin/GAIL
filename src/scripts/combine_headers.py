@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 
 used = set()
 
+
 def go(old_file, library_path, path):
     relative = os.path.join(os.path.dirname(old_file), path)
     relative_to_library = os.path.join(library_path, path)
@@ -14,6 +15,7 @@ def go(old_file, library_path, path):
         return relative_to_library
     else:
         return path
+
 
 def dfs(file, library_path):
     if file in used:
@@ -33,11 +35,11 @@ def dfs(file, library_path):
                     if name in used:
                         continue
                     used.add(name)
-                    print line,
+                    print(line),
                 elif line.startswith("#include \""):
                     dfs(go(file, library_path, line[8:].strip("\n\r \"")), library_path)
                 else:
-                    print line,
+                    print(line),
 
 
 def main():
@@ -47,6 +49,7 @@ def main():
     args = parser.parse_args()
 
     dfs(args.source, args.library)
+
 
 if __name__ == "__main__":
     main()
