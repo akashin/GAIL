@@ -48,7 +48,7 @@ public:
       throw std::logic_error("No free space left on column: " + std::to_string(action.column));
     }
 
-    field[row][action.column] = action.player_id;
+    field[row][action.column] = static_cast<int8_t>(action.player_id);
     ++turn;
     checkWinner();
 
