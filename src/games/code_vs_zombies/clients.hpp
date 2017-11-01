@@ -110,6 +110,7 @@ private:
     int zombieCount;
     state_input_stream >> zombieCount;
     state_input_stream.ignore();
+    state.zombies.clear();
     for (int i = 0; i < zombieCount; i++) {
       int zombieId;
       Point2D zombiePos;
