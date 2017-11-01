@@ -8,9 +8,13 @@
 
 using namespace gail::code_vs_zombies;
 
-int main() {
+void playStreamGame() {
   StreamClient client(std::cin, std::cout);
-  PickLastHumanPlayer player;
+  PickSimulate player;
   (void) gail::playMatch<State, Action>({&client}, {&player});
+}
+
+int main() {
+  playStreamGame();
   return 0;
 }
