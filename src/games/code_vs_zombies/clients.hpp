@@ -7,7 +7,10 @@
 
 #include <vector>
 #include <iostream>
+#include <cmath>
+
 #include "../../core/client.hpp"
+#include "code_vs_zombies.hpp"
 
 namespace gail {
 namespace code_vs_zombies {
@@ -21,7 +24,35 @@ struct Point2D {
   Point2D(): Point2D(0, 0) {}
 
   int x, y;
+
+  bool operator == (const Point2D& other) const {
+    return x == other.x && y == other.y;
+  }
 };
+
+int dist2(const Point2D& p) {
+  return p.x * p.x + p.y * p.y;
+}
+
+int dist2(const Point2D& p, const Point2D& q) {
+  return dist2(Point2D(p.x - q.x, p.y - q.y));
+}
+
+Point2D roundTo(Point2D from, Point2D to, int max_distance) {
+  Point2D res(to.x - from.x, to.y - from.y);
+  int d2 = dist2(res);
+  if (d2 > max_distance * max_distance) {
+    res.x *= static_cast<double>(max_distance) / std::sqrt(d2);
+    res.y *= static_cast<double>(max_distance) / std::sqrt(d2);
+  }
+  res.x += from.x;
+  res.y += from.y;
+  if (res.x < 0) res.x = 0;
+  if (res.x >= W) res.x = W - 1;
+  if (res.y < 0) res.y = 0;
+  if (res.y >= H) res.y = H - 1;
+  return res;
+}
 
 std::istream& operator >> (std::istream& is, Point2D& point) {
   is >> point.x >> point.y;
