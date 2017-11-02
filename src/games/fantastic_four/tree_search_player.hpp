@@ -19,15 +19,6 @@ bool isValid(int row, int column) {
   return row >= 0 && column >= 0 && row < H && column < W;
 }
 
-int oppositePlayer(int player_id) {
-  if (player_id == FIRST_PLAYER) {
-    return SECOND_PLAYER;
-  } else if (player_id == SECOND_PLAYER) {
-    return FIRST_PLAYER;
-  }
-  throw std::logic_error("Invalid player: " + std::to_string(player_id));
-}
-
 int scoreState(PlayerState state) {
   int totalScore = 0;
   for (int row = 0; row < H; ++row) {
