@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include "fantastic_four.hpp"
+#include "utils.hpp"
 
 namespace gail {
 namespace fantastic_four {
@@ -45,12 +46,14 @@ public:
       ++row;
     }
     if (row == -1) {
+      // TODO(akashin): Should we always include field?
+      std::cerr << field;
       throw std::logic_error("No free space left on column: " + std::to_string(action.column));
     }
 
     field[row][action.column] = static_cast<int8_t>(action.player_id);
     ++turn;
-    checkWinner();
+    winner = getWinner(field);
 
     if (winner != NO_PLAYER) {
       expected_player_id = NO_PLAYER;
@@ -86,52 +89,14 @@ private:
 
   void validateAction(const Action& action) {
     if (action.player_id != expected_player_id) {
+      std::cerr << field;
       throw std::logic_error("Wrong player id, expected: " + std::to_string(expected_player_id) +
                              ", found: " + std::to_string(action.player_id) + ".");
     }
 
     if (action.column < 0 or action.column >= W) {
+      std::cerr << field;
       throw std::logic_error("Wrong action column: " + std::to_string(action.column));
-    }
-  }
-
-  bool isValid(int row, int column) {
-    return (row >= 0 && column >= 0 && row < H && column < W);
-  }
-
-  void checkWinner() {
-    for (int row = 0; row < H; ++row) { for (int col = 0; col < W; ++col) {
-        for (int d = 0; d < dRow.size(); ++d) {
-          if (field[row][col] == NO_PLAYER) {
-            continue;
-          }
-
-          bool covered = true;
-          for (int k = 0; k < WIN_LENGTH; ++k) {
-            int nRow = row + k * dRow[d];
-            int nCol = col + k * dCol[d];
-
-            if (!isValid(nRow, nCol)) {
-              covered = false;
-              break;
-            }
-
-            if (field[nRow][nCol] != field[row][col]) {
-              covered = false;
-              break;
-            }
-          }
-
-          if (covered) {
-            winner = field[row][col];
-            return;
-          }
-        }
-      }
-    }
-
-    if (turn == H * W) {
-      winner = DRAW;
     }
   }
 
