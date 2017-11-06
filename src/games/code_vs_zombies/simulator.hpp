@@ -9,6 +9,7 @@
 #include <set>
 
 #include "clients.hpp"
+#include "point2d.hpp"
 
 namespace gail {
 namespace code_vs_zombies {

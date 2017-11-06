@@ -11,89 +11,10 @@
 
 #include "../../core/client.hpp"
 #include "code_vs_zombies.hpp"
+#include "simulator.hpp"
 
 namespace gail {
 namespace code_vs_zombies {
-
-const int INVALID_ID = -1;
-
-struct Point2D {
-  Point2D(int x, int y)
-      : x(x), y(y) {}
-
-  Point2D(): Point2D(0, 0) {}
-
-  int x, y;
-
-  bool operator == (const Point2D& other) const {
-    return x == other.x && y == other.y;
-  }
-};
-
-int dist2(const Point2D& p) {
-  return p.x * p.x + p.y * p.y;
-}
-
-int dist2(const Point2D& p, const Point2D& q) {
-  return dist2(Point2D(p.x - q.x, p.y - q.y));
-}
-
-Point2D roundTo(Point2D from, Point2D to, int max_distance) {
-  Point2D res(to.x - from.x, to.y - from.y);
-  int d2 = dist2(res);
-  if (d2 > max_distance * max_distance) {
-    res.x *= static_cast<double>(max_distance) / std::sqrt(d2);
-    res.y *= static_cast<double>(max_distance) / std::sqrt(d2);
-  }
-  res.x += from.x;
-  res.y += from.y;
-  if (res.x < 0) res.x = 0;
-  if (res.x >= W) res.x = W - 1;
-  if (res.y < 0) res.y = 0;
-  if (res.y >= H) res.y = H - 1;
-  return res;
-}
-
-std::istream& operator >> (std::istream& is, Point2D& point) {
-  is >> point.x >> point.y;
-  return is;
-}
-
-struct Human {
-  Human() = default;
-
-  Human(int id, const Point2D& pos)
-      : id(id), pos(pos) {}
-
-  int id = INVALID_ID;
-  Point2D pos;
-};
-
-struct Zombie {
-  Zombie() = default;
-
-  Zombie(int id, const Point2D& pos, const Point2D& next_pos)
-      : id(id), pos(pos), next_pos(next_pos) {}
-
-  int id = INVALID_ID;
-  Point2D pos;
-  Point2D next_pos;
-};
-
-class State {
-public:
-  Point2D me;
-  std::vector<Human> humans;
-  std::vector<Zombie> zombies;
-};
-
-class Action {
-public:
-  explicit Action(const Point2D& target)
-      : target(target) {}
-
-  Point2D target;
-};
 
 class StreamClient : public Client<State, Action> {
 public:
@@ -156,6 +77,31 @@ private:
   std::ostream& action_output_stream;
   bool state_refreshed = false;
   State state;
+};
+
+class SimulatorClient : public Client<State, Action> {
+public:
+  explicit SimulatorClient(Simulator& simulator)
+      : simulator(simulator) {}
+
+  int getScore() override {
+    return simulator.getScore();
+  }
+
+  bool isGameFinished() override {
+    return simulator.isFinished();
+  }
+
+  State getState() override {
+    return simulator.getState();
+  }
+
+  void makeAction(const Action& action) override {
+    simulator.makeAction(action);
+  }
+
+private:
+  Simulator& simulator;
 };
 
 }; // namespace code_vs_zombies

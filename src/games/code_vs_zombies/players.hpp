@@ -14,6 +14,7 @@
 #include "simulator.hpp"
 #include "../../core/player.hpp"
 #include "code_vs_zombies.hpp"
+#include "point2d.hpp"
 
 namespace gail {
 namespace code_vs_zombies {
