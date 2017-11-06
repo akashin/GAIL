@@ -17,8 +17,8 @@ namespace gail {
 // Plays a game between multiple players until none of them have any possible moves.
 // Returns the final scores of each player.
 template <typename State, typename Action>
-std::vector<int> playMatch(std::vector<Client<State, Action>*> clients,
-                           std::vector<Player<State, Action>*> players) {
+std::vector<int> playMatch(std::vector<gail::Client<State, Action>*> clients,
+                           std::vector<gail::Player<State, Action>*> players) {
   if (clients.size() != players.size()) {
     throw std::logic_error("Number of clients should be the same as number of players.");
   }
