@@ -62,6 +62,35 @@ public:
   std::vector<Zombie> zombies;
 };
 
+std::istream& operator >> (std::istream& is, State& state) {
+  is >> state.me.x >> state.me.y;
+  is.ignore();
+  int humanCount;
+  is >> humanCount;
+  is.ignore();
+  state.humans.clear();
+  for (int i = 0; i < humanCount; i++) {
+    int humanId;
+    Point2D humanPos;
+    is >> humanId >> humanPos;
+    is.ignore();
+    state.humans.emplace_back(humanId, humanPos);
+  }
+  int zombieCount;
+  is >> zombieCount;
+  is.ignore();
+  state.zombies.clear();
+  for (int i = 0; i < zombieCount; i++) {
+    int zombieId;
+    Point2D zombiePos;
+    Point2D zombieNextPos;
+    is >> zombieId >> zombiePos >> zombieNextPos;
+    is.ignore();
+    state.zombies.emplace_back(zombieId, zombiePos, zombieNextPos);
+  }
+  return is;
+}
+
 class Action {
 public:
   explicit Action(const Point2D& target)

@@ -46,31 +46,7 @@ public:
 
 private:
   void readState() {
-    state_input_stream >> state.me.x >> state.me.y;
-    state_input_stream.ignore();
-    int humanCount;
-    state_input_stream >> humanCount;
-    state_input_stream.ignore();
-    state.humans.clear();
-    for (int i = 0; i < humanCount; i++) {
-      int humanId;
-      Point2D humanPos;
-      state_input_stream >> humanId >> humanPos;
-      state_input_stream.ignore();
-      state.humans.emplace_back(humanId, humanPos);
-    }
-    int zombieCount;
-    state_input_stream >> zombieCount;
-    state_input_stream.ignore();
-    state.zombies.clear();
-    for (int i = 0; i < zombieCount; i++) {
-      int zombieId;
-      Point2D zombiePos;
-      Point2D zombieNextPos;
-      state_input_stream >> zombieId >> zombiePos >> zombieNextPos;
-      state_input_stream.ignore();
-      state.zombies.emplace_back(zombieId, zombiePos, zombieNextPos);
-    }
+    state_input_stream >> state;
   }
 
   std::istream& state_input_stream;
