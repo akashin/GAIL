@@ -17,7 +17,7 @@ namespace code_vs_zombies {
 template <typename T, typename Funct>
 int erase(std::vector<T>& v, Funct&& funct) {
   auto it = std::remove_if(v.begin(), v.end(), funct);
-  int cnt = static_cast<int>(v.end() - it);
+  auto cnt = static_cast<int>(v.end() - it);
   v.erase(it, v.end());
   return cnt;
 };
@@ -29,7 +29,7 @@ public:
     while (f.size() <= n) {
       f.push_back(f[f.size() - 2] + f[f.size() - 1]);
     }
-    return f.at(n);
+    return f[n];
   }
 private:
   mutable std::vector<int> f;
@@ -44,12 +44,12 @@ struct Point2DCmp {
 
 class Simulator {
 public:
-  explicit Simulator(const State& state)
-    : state(state)
-    , score(0)
-    , fibonnacci()
-  {
+  explicit Simulator(State state)
+      : state(std::move(state))
+        , score(0)
+        , fibonnacci() {
   }
+
   Simulator() = delete;
 
   void makeAction(const Action& action) {
@@ -97,7 +97,7 @@ public:
   }
 
   int getScore() const {
-    int h = static_cast<int>(state.humans.size());
+    auto h = static_cast<int>(state.humans.size());
     if (h <= 0) return 0;
     return score;
   }
