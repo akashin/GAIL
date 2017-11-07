@@ -4,11 +4,8 @@ Library for implementing agents for playing games
 ## Goals 
 The library should allow the following:
 - Quickly build a simple bot for online game competition.
-- Allow range of algorithms from normal search to machine learning.
-- Be fast to be used for real game rather then only for prototyping.
-
-Non-goals:
-- Support for multiple languages.
+- Use of different algorithms from simple tree search to machine learning.
+- Be fast to be used for real game rather than only for prototyping.
 
 
 ## Code structure
