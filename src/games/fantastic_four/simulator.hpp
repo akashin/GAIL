@@ -13,6 +13,48 @@
 namespace gail {
 namespace fantastic_four {
 
+int cellHasWinner(const Field& field, int h, int w) {
+  if (field[h][w] == 0) {
+    return -1;
+  }
+
+  int id = field[h][w];
+
+  for (int dh = -1; dh <= 1; ++dh) {
+    for (int dw = 0; dw <= 1; ++dw) {
+      if (dh == 0 && dw == 0) {
+        continue;
+      }
+
+      int k1 = 1;
+      {
+        int nh = h + dh;
+        int nw = w + dw;
+        while (isOnField(nh, nw) && field[nh][nw] == id) {
+          ++k1;
+          nh += dh;
+          nw += dw;
+        }
+      }
+      int k2 = 1;
+      {
+        int nh = h - dh;
+        int nw = w - dw;
+        while (isOnField(nh, nw) && field[nh][nw] == id) {
+          ++k2;
+          nh -= dh;
+          nw -= dw;
+        }
+      }
+
+      if (k1 + k2 - 1 >= 4) {
+        return id;
+      }
+    }
+  }
+  return -1;
+}
+
 struct State {
   State(int winner, const Field& field)
       : winner(winner), field(field) {}
@@ -46,7 +88,7 @@ public:
       ++row;
     }
     if (row == -1) {
-      // TODO(akashin): Should we always include field?
+      // TODO(akashin): Should we always include field in debug messages?
       std::cerr << field;
       throw std::logic_error("No free space left on column: " + std::to_string(action.column));
     }

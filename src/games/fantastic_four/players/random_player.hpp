@@ -5,9 +5,9 @@
 #ifndef GAIL_RANDOM_PLAYER_HPP
 #define GAIL_RANDOM_PLAYER_HPP
 
-#include "fantastic_four.hpp"
-#include "../../core/player.hpp"
-#include "clients.hpp"
+#include "../fantastic_four.hpp"
+#include "../../../core/player.hpp"
+#include "../clients.hpp"
 
 #include <random>
 

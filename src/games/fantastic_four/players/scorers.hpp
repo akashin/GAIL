@@ -5,7 +5,7 @@
 #ifndef GAIL_SCORERS_HPP
 #define GAIL_SCORERS_HPP
 
-#include "fantastic_four.hpp"
+#include "../fantastic_four.hpp"
 
 namespace gail {
 namespace fantastic_four {
@@ -75,7 +75,7 @@ private:
   }
 };
 
-class VeryCleverScorer
+class OpportunityScorer
     : public Scorer {
 public:
   int isWinning[H][W][2];
@@ -87,9 +87,9 @@ public:
     for (int h = 0; h < H; ++h) {
       for (int w = 0; w < W; ++w) {
         if (field[h][w] == 0) {
-          for (int id = 1; id <= 2; ++id) {
-            field[h][w] = id;
-            isWinning[h][w][id - 1] = (posIsWinning(field, h, w) == id);
+          for (int nId = 1; nId <= 2; ++nId) {
+            field[h][w] = nId;
+            isWinning[h][w][nId - 1] = (cellHasWinner(field, h, w) == nId);
           }
           field[h][w] = 0;
         } else {
@@ -206,7 +206,7 @@ private:
 };
 
 
-class CleverScorer : public Scorer {
+class LineLengthScorer : public Scorer {
 public:
   int score(const Field& field, int id) override {
     int score = 0;

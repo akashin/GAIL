@@ -41,49 +41,6 @@ bool isOnField(int h, int w) {
   return (h >= 0 && w >= 0) && (h < H && w < W);
 }
 
-// TODO(akashin): Rename and probably move closer to simulator.
-int posIsWinning(const Field& field, int h, int w) {
-  if (field[h][w] == 0) {
-    return -1;
-  }
-
-  int id = field[h][w];
-
-  for (int dh = -1; dh <= 1; ++dh) {
-    for (int dw = 0; dw <= 1; ++dw) {
-      if (dh == 0 && dw == 0) {
-        continue;
-      }
-
-      int k1 = 1;
-      {
-        int nh = h + dh;
-        int nw = w + dw;
-        while (isOnField(nh, nw) && field[nh][nw] == id) {
-          ++k1;
-          nh += dh;
-          nw += dw;
-        }
-      }
-      int k2 = 1;
-      {
-        int nh = h - dh;
-        int nw = w - dw;
-        while (isOnField(nh, nw) && field[nh][nw] == id) {
-          ++k2;
-          nh -= dh;
-          nw -= dw;
-        }
-      }
-
-      if (k1 + k2 - 1 >= 4) {
-        return id;
-      }
-    }
-  }
-  return -1;
-}
-
 
 }; // namespace fantastic_four
 }; // namespace gail

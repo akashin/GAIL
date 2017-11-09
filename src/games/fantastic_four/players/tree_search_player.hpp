@@ -5,9 +5,9 @@
 #ifndef GAIL_TREE_SEARCH_PLAYER_HPP
 #define GAIL_TREE_SEARCH_PLAYER_HPP
 
-#include "../../core/player.hpp"
-#include "clients.hpp"
-#include "simulator.hpp"
+#include "../../../core/player.hpp"
+#include "../clients.hpp"
+#include "../simulator.hpp"
 
 namespace gail {
 namespace fantastic_four {
