@@ -12,8 +12,6 @@
 namespace gail {
 namespace fantastic_four {
 
-const int INF = static_cast<int>(1e9);
-
 // TODO(akashin): Can we reuse this?
 bool isValid(int row, int column) {
   return row >= 0 && column >= 0 && row < H && column < W;
