@@ -24,12 +24,11 @@ void playMatchGame() {
   SimulatorClient second_client(SECOND_PLAYER, simulator);
 
   TreeSearchPlayer first_player(FIRST_PLAYER);
-//  SearchWithScorerPlayer first_player(4, FIRST_PLAYER, std::make_unique<VeryCleverScorer>());
-//   TODO(akashin): Find a way to pass this into the constructor.
-//  first_player.setWithCache(true);
-  SearchWithScorerPlayer second_player(1, SECOND_PLAYER, std::make_unique<VeryCleverScorer>());
-  // TODO(akashin): Find a way to pass this into the constructor.
-  second_player.setWithCache(true);
+  SearchWithScorerPlayer second_player(SECOND_PLAYER, gail::Config{
+      {"start_depth", 1},
+      {"scorer",      static_cast<Scorer *>(new VeryCleverScorer())},
+      {"max_turn_time", 10},
+  });
 
   auto match_results = gail::playMatch<PlayerState, PlayerAction>({&first_client, &second_client},
                                                                   {&first_player, &second_player});

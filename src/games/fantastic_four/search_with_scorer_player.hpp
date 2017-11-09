@@ -14,19 +14,14 @@
 #include "../../core/player.hpp"
 #include "scorers.hpp"
 #include "clients.hpp"
+#include "../../utils/config.hpp"
 
 namespace gail {
 namespace fantastic_four {
 
-// TODO(akashin): Pass this as the parameter to the player?
-const bool MY_DEBUG = false;
-const bool MY_DEBUG_DEPTH = false;
-
-// TODO(akashin): This should be an input parameter.
-const int MAX_TIME = 10;
-
 const int NO_ACTION = -1;
 const int TIMEOUT_ACTION = -2;
+const int IN_CACHE_ACTION = -3;
 
 struct pair_hash {
   template <class T1, class T2>
@@ -66,13 +61,20 @@ struct Decision {
 };
 
 const float SCORE_DECAY = 0.9f;
-//const float MULTIPLE_SCORE_DISCOUNT = 0.4;
 const float MULTIPLE_SCORE_DISCOUNT = 0.5f / (W - 1);
 
 class SearchWithScorerPlayer : public Player<PlayerState, PlayerAction> {
 public:
-  SearchWithScorerPlayer(int depth, int player_id, std::unique_ptr<Scorer> scorer)
-      : depth(depth), player_id(player_id), scorer(std::move(scorer)) {}
+  SearchWithScorerPlayer(int player_id, Config config)
+      : player_id(player_id) {
+    start_depth = config.get("start_depth", 1);
+    scorer.reset(config.get<Scorer *>("scorer"));
+    score_decay = config.get("score_decay", SCORE_DECAY);
+    multiple_score_discount = config.get("multiple_score_discount", MULTIPLE_SCORE_DISCOUNT);
+    with_cache = config.get("with_cache", false);
+    max_turn_time = config.get<int>("max_turn_time");
+    print_debug_info = config.get("print_debug_info", false);
+  }
 
   PlayerAction takeAction(const PlayerState& state) override {
     return PlayerAction(solve(state.field, player_id));
@@ -80,9 +82,9 @@ public:
 
   std::string name() const {
     return "SearchStrategy("
-           + std::to_string(depth)
-           + ", decay = " + std::to_string(scoreDecay)
-           + ", mdisc = " + std::to_string(multipleScoreDiscout)
+           + std::to_string(start_depth)
+           + ", decay = " + std::to_string(score_decay)
+           + ", mdisc = " + std::to_string(multiple_score_discount)
            + ")";
   }
 
@@ -118,7 +120,7 @@ public:
     HashType stateHash;
 
     int bestW = NO_ACTION;
-    int d = depth;
+    int d = start_depth;
     for (; d < 8 * 8; ++d) {
       scoreCache.clear();
       auto decision = search(field, id, d, availableW, availableSize, stateHash);
@@ -129,23 +131,23 @@ public:
       }
       assert(availableW.size() == availableSize);
 
-      if (MY_DEBUG_DEPTH) {
+      if (print_debug_info) {
         std::cerr << "w: " << decision.w << std::endl;
         std::cerr << "score: " << decision.score << std::endl;
         std::cerr << (clock() - startTime) * 1.0 / CLOCKS_PER_SEC << std::endl;
-        std::cerr << "Depth: " << depth << std::endl;
+        std::cerr << "Depth: " << start_depth << std::endl;
         std::cerr << "---------" << std::endl;
       }
     }
     return bestW;
   }
 
-  Decision search(Field& field, int id, int max_depth, std::vector<int>& availableW, int&
-  availableSize,
-                  HashType stateHash) {
+  Decision
+  search(Field& field, int id, int max_depth, std::vector<int>& availableW, int& availableSize,
+         HashType stateHash) {
     clock_t currentTime = clock();
     clock_t ms = (currentTime - startTime) * 1000 / CLOCKS_PER_SEC;
-    if (ms > MAX_TIME * 0.9) {
+    if (ms > max_turn_time * 0.9) {
       return Decision(TIMEOUT_ACTION, INF);
     }
 
@@ -153,10 +155,10 @@ public:
       return Decision(NO_ACTION, 0);
     }
 
-    if (withCache) {
+    if (with_cache) {
       auto it = scoreCache.find(stateHash);
       if (it != scoreCache.end()) {
-        return Decision(-3, it->second);
+        return Decision(IN_CACHE_ACTION, it->second);
       }
     }
 
@@ -179,7 +181,6 @@ public:
       }
 
       HashType addHash = hashMove(h, w, id);
-      //cerr << "Add hash " << addHash << endl;
 
       int winner = posIsWinning(field, h, w);
       Decision decision;
@@ -191,16 +192,6 @@ public:
           decision = Decision(NO_ACTION, -INF);
         } else {
           decision = Decision(NO_ACTION, INF);
-        }
-      }
-      if (MY_DEBUG) {
-        if (max_depth >= 5) {
-          std::cerr << "depth: " << max_depth
-                    << ", w: " << w
-                    << ", score: " << decision.score
-                    << ", opponent.w: " << decision.w
-                    << std::endl;
-          std::cerr << field;
         }
       }
 
@@ -215,10 +206,6 @@ public:
         return Decision(TIMEOUT_ACTION, INF);
       }
 
-      //if (decision.w == -3) {
-      //cerr << "Got cached value " << decision.score << endl;
-      //}
-
       if (minW == NO_ACTION || decision.score <= minScore) {
         minW = w;
         if (decision.score == minScore) {
@@ -229,34 +216,24 @@ public:
         }
       }
     }
-    float finalScore = -minScore * scoreDecay;
-    finalScore *= (1 + (minScoreCount - 1) * multipleScoreDiscout);
+    float finalScore = -minScore * score_decay;
+    finalScore *= (1 + (minScoreCount - 1) * multiple_score_discount);
 
-    if (withCache) {
+    if (with_cache) {
       scoreCache[stateHash] = finalScore;
     }
 
     return Decision(minW, finalScore);
   }
 
-  void setWithCache(bool value) {
-    withCache = value;
-  }
-
-  void setScoreDecay(float value) {
-    scoreDecay = value;
-  }
-
-  void setMultipleScoreDiscount(float value) {
-    multipleScoreDiscout = value;
-  }
-
 private:
   int player_id;
-  int depth;
-  bool withCache = false;
-  float scoreDecay = SCORE_DECAY;
-  float multipleScoreDiscout = MULTIPLE_SCORE_DISCOUNT;
+  int start_depth;
+  int max_turn_time;
+  bool with_cache;
+  bool print_debug_info;
+  float score_decay;
+  float multiple_score_discount;
   std::unique_ptr<Scorer> scorer;
 };
 
