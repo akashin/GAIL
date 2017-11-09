@@ -5,23 +5,22 @@
 #ifndef GAIL_STRATEGY_PLAYER_HPP
 #define GAIL_STRATEGY_PLAYER_HPP
 
-#include <bits/unique_ptr.h>
 #include <unordered_map>
 #include <cassert>
 #include <iostream>
 #include <vector>
-#include "simulator.hpp"
-#include "../../core/player.hpp"
+#include <algorithm>
+#include <memory>
+#include <utility>
+
+#include "../simulator.hpp"
+#include "../../../core/player.hpp"
 #include "scorers.hpp"
-#include "clients.hpp"
-#include "../../utils/config.hpp"
+#include "../clients.hpp"
+#include "../../../utils/config.hpp"
 
 namespace gail {
 namespace fantastic_four {
-
-const int NO_ACTION = -1;
-const int TIMEOUT_ACTION = -2;
-const int IN_CACHE_ACTION = -3;
 
 struct pair_hash {
   template <class T1, class T2>
@@ -31,6 +30,24 @@ struct pair_hash {
     return h1 ^ h2;
   }
 };
+
+using HashType = std::pair<long long, long long>;
+
+HashType combine(const HashType& h1, const HashType& h2) {
+  return std::make_pair(h1.first | h2.first, h1.second | h2.second);
+}
+
+HashType hashMove(int h, int w, int id) {
+  int val = ((id - 1) + (h + w * 7) * 2);
+  int part1 = val % 63;
+  int part2 = val - (val % 63);
+
+  return std::make_pair(1ll << part1, 1ll << part2);
+}
+
+const int NO_ACTION = -1;
+const int TIMEOUT_ACTION = -2;
+const int IN_CACHE_ACTION = -3;
 
 int putInplace(Field& field, int w, int id) {
   if (field[0][w] != 0) {
@@ -88,24 +105,6 @@ public:
            + ")";
   }
 
-  clock_t startTime = 0;
-
-  using HashType = std::pair<long long, long long>;
-
-  HashType combine(const HashType& h1, const HashType& h2) {
-    return std::make_pair(h1.first | h2.first, h1.second | h2.second);
-  }
-
-  HashType hashMove(int h, int w, int id) const {
-    int val = ((id - 1) + (h + w * 7) * 2);
-    int part1 = val % 63;
-    int part2 = val - (val % 63);
-
-    return std::make_pair(1ll << part1, 1ll << part2);
-  }
-
-  std::unordered_map<HashType, float, pair_hash> scoreCache;
-
   int solve(Field field, int id) {
     startTime = clock();
 
@@ -120,10 +119,10 @@ public:
     HashType stateHash;
 
     int bestW = NO_ACTION;
-    int d = start_depth;
-    for (; d < 8 * 8; ++d) {
+    int depth = start_depth;
+    for (; depth < 8 * 8; ++depth) {
       scoreCache.clear();
-      auto decision = search(field, id, d, availableW, availableSize, stateHash);
+      auto decision = search(field, id, depth, availableW, availableSize, stateHash);
       if (decision.w != TIMEOUT_ACTION) {
         bestW = decision.w;
       } else {
@@ -182,7 +181,7 @@ public:
 
       HashType addHash = hashMove(h, w, id);
 
-      int winner = posIsWinning(field, h, w);
+      int winner = cellHasWinner(field, h, w);
       Decision decision;
       if (winner == -1) {
         decision = search(field, enemy_id, max_depth - 1, availableW, availableSize,
@@ -235,6 +234,8 @@ private:
   float score_decay;
   float multiple_score_discount;
   std::unique_ptr<Scorer> scorer;
+  clock_t startTime = 0;
+  std::unordered_map<HashType, float, pair_hash> scoreCache;
 };
 
 }; // namespace fantastic_four

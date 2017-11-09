@@ -5,10 +5,10 @@
 #include "fantastic_four.hpp"
 #include "../../core/player.hpp"
 #include "../../core/match.hpp"
-#include "random_player.hpp"
-#include "tree_search_player.hpp"
-#include "scorers.hpp"
-#include "search_with_scorer_player.hpp"
+#include "players/random_player.hpp"
+#include "players/tree_search_player.hpp"
+#include "players/scorers.hpp"
+#include "players/search_with_scorer_player.hpp"
 
 using namespace gail::fantastic_four;
 
@@ -26,7 +26,7 @@ void playMatchGame() {
   TreeSearchPlayer first_player(FIRST_PLAYER);
   SearchWithScorerPlayer second_player(SECOND_PLAYER, gail::Config{
       {"start_depth", 1},
-      {"scorer",      static_cast<Scorer *>(new VeryCleverScorer())},
+      {"scorer",      static_cast<Scorer *>(new OpportunityScorer())},
       {"max_turn_time", 10},
   });
 
