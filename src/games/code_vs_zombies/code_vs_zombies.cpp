@@ -31,9 +31,9 @@ void playSimulatorGame(const std::string& level_name) {
   Simulator simulator(level);
   SimulatorClient client(simulator);
   PickLastHumanPlayer player;
-  auto scores = gail::playMatch<State, Action>({&client}, {&player});
-  for (int i = 0; i < scores.size(); ++i) {
-    std::cout << "Score for player " << i << " is " << scores[i] << std::endl;
+  auto result = gail::playMatch<State, Action>({&client}, {&player});
+  for (int i = 0; i < result.scores.size(); ++i) {
+    std::cout << "Score for player " << i << " is " << result.scores[i] << std::endl;
   }
 }
 
