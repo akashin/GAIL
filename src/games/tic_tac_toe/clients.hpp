@@ -9,6 +9,7 @@
 #include "tic_tac_toe.hpp"
 #include "../../core/client.hpp"
 #include "../../core/stream_client.hpp"
+#include "simulator.hpp"
 
 namespace gail {
 namespace tic_tac_toe {

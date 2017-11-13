@@ -28,7 +28,7 @@ void playWithStream() {
 }
 
 void playWithSimulator() {
-  gail::tic_tac_toe::Simulator game;
+  Simulator game;
 
   SimulatorClient firstClient(FIRST_PLAYER, game);
   SimulatorClient secondClient(SECOND_PLAYER, game);
