@@ -62,7 +62,7 @@ public:
   std::vector<Zombie> zombies;
 };
 
-std::istream& operator >> (std::istream& is, State& state) {
+std::istream& operator>>(std::istream& is, State& state) {
   is >> state.me.x >> state.me.y;
   is.ignore();
   int humanCount;

@@ -16,7 +16,8 @@ namespace fantastic_four {
 
 class RandomPlayer : public Player<PlayerState, PlayerAction> {
 public:
-  RandomPlayer(): generator(random_device()), action_distribution(0, 7) {}
+  RandomPlayer()
+      : generator(random_device()), action_distribution(0, 7) {}
 
   PlayerAction takeAction(const PlayerState& state) override {
     while (true) {

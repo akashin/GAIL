@@ -68,9 +68,9 @@ public:
     }
     for (int probe = 0; probe < 150; ++probe) {
       up_best({
-        Action(Point2D(width_distribution(rnd), hight_distribution(rnd))),
-        Action(Point2D(width_distribution(rnd), hight_distribution(rnd)))
-      });
+                  Action(Point2D(width_distribution(rnd), hight_distribution(rnd))),
+                  Action(Point2D(width_distribution(rnd), hight_distribution(rnd)))
+              });
     }
     for (int probe = 0; probe < 100; ++probe) {
       up_best({
@@ -80,7 +80,7 @@ public:
               });
     }
     std::cerr << "best_score = " << best_score << std::endl;
-    std::cerr << "clock = " << clock() / (double)CLOCKS_PER_SEC << std::endl;
+    std::cerr << "clock = " << clock() / (double) CLOCKS_PER_SEC << std::endl;
     return best.empty() ? Action(state.me) : best[0];
   }
 };
@@ -89,7 +89,7 @@ class PickSafe : public Player<State, Action> {
 public:
   Action takeAction(const State& state) override {
     std::vector<double> keys(state.humans.size());
-    std::transform(state.humans.begin(), state.humans.end(), keys.begin(), [&] (const Human& human) {
+    std::transform(state.humans.begin(), state.humans.end(), keys.begin(), [&](const Human& human) {
       int d2 = std::numeric_limits<int>::max();
       for (const auto& z: state.zombies) {
         int u2 = dist2(z.pos, human.pos);

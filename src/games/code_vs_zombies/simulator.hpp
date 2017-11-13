@@ -24,19 +24,22 @@ int erase(std::vector<T>& v, Funct&& funct) {
 
 class Fibonnacci {
 public:
-  Fibonnacci() : f({1, 1}) {}
+  Fibonnacci()
+      : f({1, 1}) {}
+
   int get(int n) const {
     while (f.size() <= n) {
       f.push_back(f[f.size() - 2] + f[f.size() - 1]);
     }
     return f[n];
   }
+
 private:
   mutable std::vector<int> f;
 };
 
 struct Point2DCmp {
-  bool operator ()(const Point2D& lhs, const Point2D rhs) const {
+  bool operator()(const Point2D& lhs, const Point2D rhs) const {
     return std::make_pair(lhs.x, lhs.y) <
            std::make_pair(rhs.x, rhs.y);
   }
@@ -71,7 +74,7 @@ public:
     {
       zombie_pos.resize(state.zombies.size());
       for (size_t i = 0; i < state.zombies.size(); ++i) {
-        zombie_pos[i]= state.zombies[i].pos;
+        zombie_pos[i] = state.zombies[i].pos;
       }
       sort(zombie_pos.begin(), zombie_pos.end(), Point2DCmp());
       erase(state.humans, [=](const Human& human) {

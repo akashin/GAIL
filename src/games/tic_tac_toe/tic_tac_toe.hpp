@@ -33,7 +33,8 @@ struct State {
 };
 
 struct Action {
-  Action(int player_id, int row, int col) : player_id(player_id), row(row), col(col) {}
+  Action(int player_id, int row, int col)
+      : player_id(player_id), row(row), col(col) {}
 
   int player_id;
   int row, col;
@@ -45,12 +46,13 @@ struct PlayerState {
 };
 
 struct PlayerAction {
-  PlayerAction(int row, int col) : row(row), col(col) {}
+  PlayerAction(int row, int col)
+      : row(row), col(col) {}
 
   int row, col;
 };
 
-std::ostream &operator<<(std::ostream &os, const State &state) {
+std::ostream& operator<<(std::ostream& os, const State& state) {
   for (int row = 0; row < RowCount; ++row) {
     for (int col = 0; col < ColCount; ++col) {
       os << state.field[row][col] << " ";
@@ -68,7 +70,7 @@ public:
     return state;
   }
 
-  void makeAction(const Action &action) override {
+  void makeAction(const Action& action) override {
     validateAction(action);
 
     state.field[action.row][action.col] = action.player_id;
@@ -124,7 +126,7 @@ private:
     }
   }
 
-  void validateAction(const Action &action) {
+  void validateAction(const Action& action) {
     if (state.winner != NO_PLAYER) {
       throw std::logic_error("Game is already completed.");
     }

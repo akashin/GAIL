@@ -63,7 +63,8 @@ public:
   }
 
 private:
-  std::pair<PlayerAction, int> findBestAction(int current_player_id, const PlayerState& state, int depth) {
+  std::pair<PlayerAction, int>
+  findBestAction(int current_player_id, const PlayerState& state, int depth) {
     if (depth == 0) {
       // TODO(akashin): -1 is invalid move.
       return std::make_pair(PlayerAction(-1), scoreState(state));
@@ -76,7 +77,8 @@ private:
       if (simulator.isValidAction(action)) {
         auto next_state = simulator.getState();
         auto actionWithScore = findBestAction(next_player_id,
-                                              PlayerState(next_state.winner, player_id, next_state.field),
+                                              PlayerState(next_state.winner, player_id,
+                                                          next_state.field),
                                               depth - 1);
         if (player_id != current_player_id) {
           actionWithScore.second *= -1;

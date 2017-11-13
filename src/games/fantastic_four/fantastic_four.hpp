@@ -27,7 +27,7 @@ const int FIRST_PLAYER = 1;
 const int SECOND_PLAYER = 2;
 const int DRAW = 3;
 
-std::ostream &operator<<(std::ostream &os, const Field &field) {
+std::ostream& operator<<(std::ostream& os, const Field& field) {
   for (int row = 0; row < H; ++row) {
     for (int col = 0; col < W; ++col) {
       os << int(field[row][col]) << " ";

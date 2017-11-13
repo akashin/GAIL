@@ -62,7 +62,8 @@ private:
 
 class SimulatorClient : public Client<PlayerState, PlayerAction> {
 public:
-  SimulatorClient(int player_id, Simulator& game) : player_id(player_id), game(game) {
+  SimulatorClient(int player_id, Simulator& game)
+      : player_id(player_id), game(game) {
     state.player_id = player_id;
   }
 

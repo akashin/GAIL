@@ -25,8 +25,8 @@ void playMatchGame() {
 
   TreeSearchPlayer first_player(FIRST_PLAYER);
   SearchWithScorerPlayer second_player(SECOND_PLAYER, gail::Config{
-      {"start_depth", 1},
-      {"scorer",      static_cast<Scorer *>(new OpportunityScorer())},
+      {"start_depth",   1},
+      {"scorer",        static_cast<Scorer*>(new OpportunityScorer())},
       {"max_turn_time", 10},
   });
 

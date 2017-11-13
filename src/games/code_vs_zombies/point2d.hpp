@@ -15,11 +15,12 @@ struct Point2D {
   Point2D(int x, int y)
       : x(x), y(y) {}
 
-  Point2D(): Point2D(0, 0) {}
+  Point2D()
+      : Point2D(0, 0) {}
 
   int x, y;
 
-  bool operator == (const Point2D& other) const {
+  bool operator==(const Point2D& other) const {
     return x == other.x && y == other.y;
   }
 };
@@ -32,7 +33,7 @@ int dist2(const Point2D& p, const Point2D& q) {
   return dist2(Point2D(p.x - q.x, p.y - q.y));
 }
 
-std::istream& operator >> (std::istream& is, Point2D& point) {
+std::istream& operator>>(std::istream& is, Point2D& point) {
   is >> point.x >> point.y;
   return is;
 }

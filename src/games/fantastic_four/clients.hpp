@@ -60,7 +60,7 @@ public:
     if (!state_refreshed) {
       readState();
       state_refreshed = true;
-    }
+   
     return state;
   }
 

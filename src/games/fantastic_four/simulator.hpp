@@ -36,7 +36,8 @@ public:
     expected_player_id = deduceExpectedPlayer(field);
   }
 
-  Simulator(): Simulator(Field{}) {}
+  Simulator()
+      : Simulator(Field{}) {}
 
   void makeAction(const Action& action) {
     validateAction(action);

@@ -11,9 +11,9 @@ class Game {
 public:
   virtual ~Game() = default;
 
-  virtual const GameState &getState() = 0;
+  virtual const GameState& getState() = 0;
 
-  virtual void makeAction(const Action &action) = 0;
+  virtual void makeAction(const Action& action) = 0;
 };
 
 } // namespace gail
