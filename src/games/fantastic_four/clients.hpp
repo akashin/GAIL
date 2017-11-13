@@ -8,6 +8,7 @@
 #include "fantastic_four.hpp"
 #include "simulator.hpp"
 #include "../../core/client.hpp"
+#include "../../core/stream_client.hpp"
 
 namespace gail {
 namespace fantastic_four {
@@ -23,6 +24,15 @@ struct PlayerState {
   Field field{};
 };
 
+std::istream& operator>>(std::istream& is, PlayerState& state) {
+  for (int row = 0; row < H; ++row) {
+    for (int col = 0; col < W; ++col) {
+      is >> state.field[row][col];
+    }
+  }
+  return is;
+}
+
 struct PlayerAction {
   explicit PlayerAction(int column)
       : column(column) {}
@@ -30,11 +40,16 @@ struct PlayerAction {
   int column;
 };
 
-class StreamClient : public Client<PlayerState, PlayerAction> {
+std::ostream& operator<<(std::ostream& os, const PlayerAction& action) {
+  os << action.column;
+  return os;
+}
+
+class StreamClient : public StreamClientBase<PlayerState, PlayerAction> {
 public:
   StreamClient(std::istream& state_input_stream, std::ostream& action_output_stream)
-      : state_input_stream(state_input_stream), action_output_stream(action_output_stream) {
-    readState();
+      : StreamClientBase(state_input_stream, action_output_stream) {
+    state_input_stream >> state;
     state_input_stream >> state.player_id;
     state_refreshed = true;
   }
@@ -45,43 +60,12 @@ public:
     if (state.winner == NO_PLAYER) {
       return 0;
     }
-
-    if (state.winner == state.player_id) {
-      return 1;
-    }
-    return -1;
+    return (state.winner == state.player_id) ? 1 : -1;
   }
 
   bool isGameFinished() override {
     return state.winner != NO_PLAYER;
   }
-
-  PlayerState getState() override {
-    if (!state_refreshed) {
-      readState();
-      state_refreshed = true;
-   
-    return state;
-  }
-
-  void makeAction(const PlayerAction& action) override {
-    action_output_stream << action.column;
-    state_refreshed = false;
-  }
-
-private:
-  void readState() {
-    for (int row = 0; row < H; ++row) {
-      for (int col = 0; col < W; ++col) {
-        state_input_stream >> state.field[row][col];
-      }
-    }
-  }
-
-  bool state_refreshed = false;
-  PlayerState state;
-  std::istream& state_input_stream;
-  std::ostream& action_output_stream;
 
 };
 

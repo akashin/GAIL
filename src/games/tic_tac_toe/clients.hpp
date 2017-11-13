@@ -8,18 +8,16 @@
 #include <iostream>
 #include "tic_tac_toe.hpp"
 #include "../../core/client.hpp"
+#include "../../core/stream_client.hpp"
 
 namespace gail {
 namespace tic_tac_toe {
 
-class StreamClient : public Client<PlayerState, PlayerAction> {
+class StreamClient : public StreamClientBase<PlayerState, PlayerAction> {
 public:
   StreamClient(std::istream& state_input_stream, std::ostream& action_output_stream)
-      : state_input_stream(state_input_stream)
-        , action_output_stream(action_output_stream) {
+      : StreamClientBase(state_input_stream, action_output_stream) {
     state_input_stream >> state.player_id;
-    readField();
-    state_refreshed = true;
   }
 
   ~StreamClient() override = default;
@@ -32,32 +30,6 @@ public:
     return false;
   }
 
-  PlayerState getState() override {
-    if (!state_refreshed) {
-      readField();
-      state_refreshed = true;
-    }
-    return state;
-  }
-
-  void makeAction(const PlayerAction& action) override {
-    action_output_stream << action.col << " " << action.row << std::endl;
-  }
-
-private:
-  void readField() {
-    for (int row = 0; row < RowCount; ++row) {
-      for (int col = 0; col < ColCount; ++col) {
-        state_input_stream >> state.field[row][col];
-      }
-    }
-  }
-
-  std::istream& state_input_stream;
-  std::ostream& action_output_stream;
-
-  bool state_refreshed = false;
-  PlayerState state;
 };
 
 class SimulatorClient : public Client<PlayerState, PlayerAction> {

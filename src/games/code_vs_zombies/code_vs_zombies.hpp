@@ -99,6 +99,11 @@ public:
   Point2D target;
 };
 
+std::ostream& operator<<(std::ostream& os, const Action& action) {
+  os << action.target.x << " " << action.target.y;
+  return os;
+}
+
 }; // namespace code_vs_zombies
 }; // namespace gail
 

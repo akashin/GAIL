@@ -12,16 +12,15 @@
 #include "../../core/client.hpp"
 #include "code_vs_zombies.hpp"
 #include "simulator.hpp"
+#include "../../core/stream_client.hpp"
 
 namespace gail {
 namespace code_vs_zombies {
 
-class StreamClient : public Client<State, Action> {
+class StreamClient : public StreamClientBase<State, Action> {
 public:
   StreamClient(std::istream& state_input_stream, std::ostream& action_output_stream)
-      : state_input_stream(state_input_stream), action_output_stream(action_output_stream) {}
-
-  ~StreamClient() override = default;
+      : StreamClientBase(state_input_stream, action_output_stream) {}
 
   int getScore() override {
     return 0;
@@ -31,28 +30,6 @@ public:
     return false;
   }
 
-  State getState() override {
-    if (!state_refreshed) {
-      readState();
-      state_refreshed = true;
-    }
-    return state;
-  }
-
-  void makeAction(const Action& action) override {
-    action_output_stream << action.target.x << " " << action.target.y << std::endl;
-    state_refreshed = false;
-  }
-
-private:
-  void readState() {
-    state_input_stream >> state;
-  }
-
-  std::istream& state_input_stream;
-  std::ostream& action_output_stream;
-  bool state_refreshed = false;
-  State state;
 };
 
 class SimulatorClient : public Client<State, Action> {

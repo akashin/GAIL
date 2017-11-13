@@ -32,6 +32,16 @@ struct State {
   Field field{};
 };
 
+std::ostream& operator<<(std::ostream& os, const State& state) {
+  for (int row = 0; row < RowCount; ++row) {
+    for (int col = 0; col < ColCount; ++col) {
+      os << state.field[row][col] << " ";
+    }
+    os << std::endl;
+  }
+  return os;
+}
+
 struct Action {
   Action(int player_id, int row, int col)
       : player_id(player_id), row(row), col(col) {}
@@ -45,6 +55,15 @@ struct PlayerState {
   Field field{};
 };
 
+std::istream& operator>>(std::istream& is, PlayerState& state) {
+  for (int row = 0; row < RowCount; ++row) {
+    for (int col = 0; col < ColCount; ++col) {
+      is >> state.field[row][col];
+    }
+  }
+  return is;
+}
+
 struct PlayerAction {
   PlayerAction(int row, int col)
       : row(row), col(col) {}
@@ -52,13 +71,8 @@ struct PlayerAction {
   int row, col;
 };
 
-std::ostream& operator<<(std::ostream& os, const State& state) {
-  for (int row = 0; row < RowCount; ++row) {
-    for (int col = 0; col < ColCount; ++col) {
-      os << state.field[row][col] << " ";
-    }
-    os << std::endl;
-  }
+std::ostream& operator<<(std::ostream& os, const PlayerAction& action) {
+  os << action.col << " " << action.row;
   return os;
 }
 
