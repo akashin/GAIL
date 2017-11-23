@@ -34,22 +34,19 @@ MatchResult playMatch(std::vector<gail::Client<State, Action> *> clients,
     throw std::logic_error("There should be at least one client.");
   }
 
-  auto game_finished = [&]() {
-    for (auto client : clients) {
-      if (!client->isGameFinished()) {
-        return false;
-      }
-    }
-    return true;
-  };
-
   int turn_count = 0;
-  while (!game_finished()) {
+  while (true) {
+    bool had_moves = false;
     ++turn_count;
     for (int i = 0; i < clients.size(); ++i) {
       if (!clients[i]->isGameFinished()) {
+        // TODO(akashin): Add ability to record all actions.
         clients[i]->makeAction(players[i]->takeAction(clients[i]->getState()));
+        had_moves = true;
       }
+    }
+    if (!had_moves) {
+      break;
     }
   }
 

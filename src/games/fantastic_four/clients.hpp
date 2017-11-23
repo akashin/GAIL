@@ -74,8 +74,6 @@ public:
   SimulatorClient(int player_id, Simulator& simulator)
       : player_id(player_id), simulator(simulator) {
     state.player_id = player_id;
-    readState();
-    state_refreshed = true;
   }
 
   ~SimulatorClient() override = default;
