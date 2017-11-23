@@ -38,13 +38,6 @@ private:
   mutable std::vector<int> f;
 };
 
-struct Point2DCmp {
-  bool operator()(const Point2D& lhs, const Point2D rhs) const {
-    return std::make_pair(lhs.x, lhs.y) <
-           std::make_pair(rhs.x, rhs.y);
-  }
-};
-
 class Simulator {
 public:
   explicit Simulator(State state)
@@ -76,9 +69,9 @@ public:
       for (size_t i = 0; i < state.zombies.size(); ++i) {
         zombie_pos[i] = state.zombies[i].pos;
       }
-      sort(zombie_pos.begin(), zombie_pos.end(), Point2DCmp());
+      sort(zombie_pos.begin(), zombie_pos.end());
       erase(state.humans, [=](const Human& human) {
-        return std::binary_search(zombie_pos.begin(), zombie_pos.end(), human.pos, Point2DCmp());
+        return std::binary_search(zombie_pos.begin(), zombie_pos.end(), human.pos);
       });
     }
     for (auto& zombie: state.zombies) {

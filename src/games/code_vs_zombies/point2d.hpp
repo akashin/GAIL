@@ -25,6 +25,11 @@ struct Point2D {
   }
 };
 
+bool operator<(const Point2D& lhs, const Point2D rhs) {
+  return std::make_pair(lhs.x, lhs.y) <
+         std::make_pair(rhs.x, rhs.y);
+}
+
 int dist2(const Point2D& p) {
   return p.x * p.x + p.y * p.y;
 }
