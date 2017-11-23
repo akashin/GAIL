@@ -51,7 +51,7 @@ TEST(MatchTest, SimpleRun) { // NOLINT
   TestClient client;
   TestPlayer player;
   auto scores = playMatch<State, Action>({&client}, {&player});
-  EXPECT_EQ(42, scores.back());
+  EXPECT_EQ(42, scores.scores.back());
 }
 
 };
