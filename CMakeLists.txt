@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 
 set(PROJECT_NAME gail)
 project(${PROJECT_NAME})
@@ -21,6 +21,6 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 # Collect all tests into a single target.
 set(PROJECT_TEST_NAME ${PROJECT_NAME}_tests)
-file(GLOB TEST_SRC_FILES "src/tests/**/*.cpp")
+file(GLOB_RECURSE TEST_SRC_FILES "src/tests/*.cpp")
 add_executable(${PROJECT_TEST_NAME} ${TEST_SRC_FILES})
 target_link_libraries(${PROJECT_TEST_NAME} gtest gtest_main)
