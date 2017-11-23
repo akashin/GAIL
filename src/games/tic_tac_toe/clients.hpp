@@ -43,6 +43,8 @@ public:
   ~SimulatorClient() override = default;
 
   int getScore() override {
+    refreshStateIfNeeded();
+
     if (game.getState().winner == NO_PLAYER) {
       return 0;
     }
@@ -53,14 +55,14 @@ public:
   }
 
   bool isGameFinished() override {
+    refreshStateIfNeeded();
+
     return game.getState().winner != NO_PLAYER;
   }
 
   PlayerState getState() override {
-    if (!state_refreshed) {
-      readField();
-      state_refreshed = true;
-    }
+    refreshStateIfNeeded();
+
     return state;
   }
 
@@ -70,13 +72,19 @@ public:
   }
 
 private:
-  void readField() {
+  void readState() {
     state.field = game.getState().field;
+  }
+
+  void refreshStateIfNeeded() {
+    if (!state_refreshed) {
+      readState();
+      state_refreshed = true;
+    }
   }
 
   bool state_refreshed = false;
   PlayerState state;
-
   int player_id;
   Simulator& game;
 };

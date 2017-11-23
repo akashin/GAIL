@@ -80,14 +80,11 @@ public:
 
 
   int getScore() override {
-    if (!state_refreshed) {
-      readState();
-      state_refreshed = true;
-    }
+    refreshStateIfNeeded();
+
     if (state.winner == NO_PLAYER) {
       return 0;
     }
-
     if (state.winner == state.player_id) {
       return 1;
     }
@@ -95,18 +92,14 @@ public:
   }
 
   bool isGameFinished() override {
-    if (!state_refreshed) {
-      readState();
-      state_refreshed = true;
-    }
+    refreshStateIfNeeded();
+
     return state.winner != NO_PLAYER;
   }
 
   PlayerState getState() override {
-    if (!state_refreshed) {
-      readState();
-      state_refreshed = true;
-    }
+    refreshStateIfNeeded();
+
     return state;
   }
 
@@ -119,6 +112,13 @@ private:
   void readState() {
     state.winner = simulator.getState().winner;
     state.field = simulator.getState().field;
+  }
+
+  void refreshStateIfNeeded() {
+    if (!state_refreshed) {
+      readState();
+      state_refreshed = true;
+    }
   }
 
   bool state_refreshed = false;
