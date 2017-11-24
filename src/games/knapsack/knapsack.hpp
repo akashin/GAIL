@@ -24,6 +24,11 @@ struct State {
 };
 
 struct Action {
+  Action() = default;
+
+  explicit Action(std::vector<int> takenItems)
+      : takenItems(std::move(takenItems)) {}
+
   std::vector<int> takenItems{};
 };
 

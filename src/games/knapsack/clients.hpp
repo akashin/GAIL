@@ -23,7 +23,7 @@ public:
       totalUtility += state.items[index].utility;
     }
     if (totalWeight > state.capacity) {
-      return 0;
+      return -(totalWeight - state.capacity);
     }
     return totalUtility;
   }
