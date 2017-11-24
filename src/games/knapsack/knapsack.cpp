@@ -34,8 +34,8 @@ float clamp(float x, float lo, float hi) {
 
 void solve_with_evolution(const State& state) {
   int populationSize = 500;
-  int iterationCount = 200;
-  float stepSize = 0.00001;
+  int iterationCount = 1000;
+  float stepSize = 0.000005;
   int maxScore = -1000000000;
 
   EvolutionParameters parameters = generateEvolutionParameters(state);
@@ -66,23 +66,29 @@ void solve_with_evolution(const State& state) {
         } else {
           logProb = -(1 - weights[j]) / (1 - probabilities[j]);
         }
-        gradient[j] += populationWithScore[i].second * logProb / populationSize;
+        float baseline = maxScore;
+        gradient[j] += (populationWithScore[i].second - baseline) * logProb / populationSize;
       }
     }
+
+    double gradNorm = 0;
     for (int j = 0; j < parameters.probabilities.size(); ++j) {
-//      std::cerr << probabilities[j] << " ";
+      gradNorm += gradient[j] * gradient[j];
       probabilities[j] += gradient[j] * stepSize;
       probabilities[j] = clamp(probabilities[j], 0, 1);
     }
-//    std::cerr << std::endl;
-    std::cerr << "Evolution score at iteration " << iteration << ": " << maxScore << std::endl;
+    gradNorm = sqrt(gradNorm);
+    if (iteration % (iterationCount / 20) == 0) {
+      std::cerr << "Evolution score at iteration " << iteration << ": " << maxScore
+                << ", gradient norm: " << gradNorm << std::endl;
+    }
   }
 
 //  auto results = gail::playMatch<State, Action>({&client}, {&player});
 }
 
 int main() {
-  State state = generateState(50, 100);
+  State state = generateState(100, 1000);
   solve_greedily(state);
   solve_with_evolution(state);
 }
