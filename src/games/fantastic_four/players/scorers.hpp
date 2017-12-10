@@ -10,7 +10,7 @@
 namespace gail {
 namespace fantastic_four {
 
-const int LARGE_SCORE = static_cast<int>(1e9);
+const int LARGE_SCORE = static_cast<int>(1e6);
 
 struct Scorer {
   virtual int score(const Field& field, int id) = 0;

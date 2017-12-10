@@ -26,7 +26,9 @@ struct MatchResult {
 // Returns the final scores of each player.
 template <typename State, typename Action>
 MatchResult playMatch(std::vector<gail::Client<State, Action> *> clients,
-                      std::vector<gail::Player<State, Action> *> players) {
+                      std::vector<gail::Player<State, Action> *> players,
+                      std::vector<Action> *actions = nullptr
+) {
   if (clients.size() != players.size()) {
     throw std::logic_error("Number of clients should be the same as number of players.");
   }
@@ -40,9 +42,12 @@ MatchResult playMatch(std::vector<gail::Client<State, Action> *> clients,
     ++turn_count;
     for (int i = 0; i < clients.size(); ++i) {
       if (!clients[i]->isGameFinished()) {
-        // TODO(akashin): Add ability to record all actions.
-        clients[i]->makeAction(players[i]->takeAction(clients[i]->getState()));
+        Action action = players[i]->takeAction(clients[i]->getState());
+        clients[i]->makeAction(action);
         had_moves = true;
+        if (actions) {
+          actions->emplace_back(action);
+        }
       }
     }
     if (!had_moves) {

@@ -23,15 +23,23 @@ void playMatchGame() {
   SimulatorClient first_client(FIRST_PLAYER, simulator);
   SimulatorClient second_client(SECOND_PLAYER, simulator);
 
-  TreeSearchPlayer first_player(FIRST_PLAYER);
+  TreeSearchPlayer first_player(FIRST_PLAYER, gail::Config {
+    {"start_depth",      1},
+    {"end_depth",        3},
+    {"scorer",           static_cast<Scorer*>(new SimpleScorer())},
+    {"print_debug_info", true},
+  });
   SearchWithScorerPlayer second_player(SECOND_PLAYER, gail::Config{
-      {"start_depth",   1},
-      {"scorer",        static_cast<Scorer*>(new OpportunityScorer())},
-      {"max_turn_time", 10},
+      {"start_depth",      1},
+      {"scorer",           static_cast<Scorer*>(new OpportunityScorer())},
+      {"max_turn_time",    100},
+      {"print_debug_info", true},
   });
 
+  std::vector<PlayerAction> actions;
   auto match_results = gail::playMatch<PlayerState, PlayerAction>({&first_client, &second_client},
-                                                                  {&first_player, &second_player});
+                                                                  {&first_player, &second_player},
+                                                                  &actions);
 
   std::cout << "Game length: " << match_results.turn_count << std::endl;
   for (int i = 0; i < match_results.scores.size(); ++i) {
@@ -39,6 +47,11 @@ void playMatchGame() {
   }
   std::cout << "Final board state:" << std::endl;
   std::cout << simulator.getState().field << std::endl;
+  for (int i = 0; i < actions.size(); ++i) {
+    if (i) std::cout << ' ';
+    std::cout << actions[i].column;
+  }
+  std::cout << std::endl;
 }
 
 int main() {

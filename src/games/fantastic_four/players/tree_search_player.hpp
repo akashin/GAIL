@@ -8,78 +8,85 @@
 #include "../../../core/player.hpp"
 #include "../clients.hpp"
 #include "../simulator.hpp"
+#include "../../../utils/config.hpp"
+#include "scorers.hpp"
 
 namespace gail {
 namespace fantastic_four {
 
-// TODO(akashin): Can we reuse this?
-bool isValid(int row, int column) {
-  return row >= 0 && column >= 0 && row < H && column < W;
-}
-
-int scoreState(PlayerState state) {
-  int totalScore = 0;
-  for (int row = 0; row < H; ++row) {
-    for (int col = 0; col < W; ++col) {
-      for (int d = 0; d < dRow.size(); ++d) {
-        if (state.field[row][col] == NO_PLAYER) {
-          continue;
-        }
-
-        int count = 0;
-        for (int k = 0; k < WIN_LENGTH; ++k) {
-          int nRow = row + k * dRow[d];
-          int nCol = col + k * dCol[d];
-
-          if (!isValid(nRow, nCol)) {
-            break;
-          }
-
-          if (state.field[nRow][nCol] != state.field[row][col]) {
-            break;
-          }
-          ++count;
-        }
-
-        if (count >= WIN_LENGTH) {
-          // TODO(akashin): Maybe more principled approach?
-          totalScore = INF / 16;
-        } else {
-          totalScore += count * count * count;
-        }
-      }
-    }
-  }
-  return totalScore;
+namespace impl {
+  const int NO_ACTION = -1;
+  const int TIMEOUT_ACTION = -2;
 }
 
 class TreeSearchPlayer : public Player<PlayerState, PlayerAction> {
 public:
-  explicit TreeSearchPlayer(int player_id)
-      : player_id(player_id) {}
+  explicit TreeSearchPlayer(int player_id, Config config)
+      : player_id(player_id) {
+    scorer.reset(config.get<Scorer *>("scorer"));
+    start_depth = config.get("start_depth", 1);
+    end_depth = config.get("end_depth", 8 * 7);
+    max_turn_time = config.get<int>("max_turn_time", 0);
+    print_debug_info = config.get("print_debug_info", false);
+  }
 
   PlayerAction takeAction(const PlayerState& state) override {
-    return findBestAction(player_id, state, 1).first;
+    PlayerAction best_action(-1);
+    startTime = clock();
+    for (int depth = start_depth; depth <= end_depth; ++depth) {
+      auto actionWithScore = findBestAction(player_id, state, depth);
+      if (actionWithScore.first.column < 0) break;
+      best_action = actionWithScore.first;
+      if (print_debug_info) {
+        std::cerr << "[tsp]" <<
+          " depth: " << depth <<
+          " time: " << getTimeMs() <<
+          " action: " << actionWithScore.first.column <<
+          " score: " << actionWithScore.second << std::endl;
+      }
+    }
+    return best_action;
+  }
+
+  int getTimeMs() const {
+    clock_t currentTime = clock();
+    return (currentTime - startTime) * 1000 / CLOCKS_PER_SEC;
   }
 
 private:
   std::pair<PlayerAction, int>
   findBestAction(int current_player_id, const PlayerState& state, int depth) {
+#if 0 // TODO(gchebanov) should work without that
+    if (state.winner == player_id) {
+      return std::make_pair(PlayerAction(impl::NO_ACTION), INF);
+    } else if (state.winner == oppositePlayer(player_id)) {
+      return std::make_pair(PlayerAction(impl::NO_ACTION), -INF);
+    } else if (state.winner == DRAW) {
+      return std::make_pair(PlayerAction(impl::NO_ACTION), 0);
+    }
+#endif
     if (depth == 0) {
-      // TODO(akashin): -1 is invalid move.
-      return std::make_pair(PlayerAction(-1), scoreState(state));
+      return std::make_pair(PlayerAction(impl::NO_ACTION), scorer->score(state.field, player_id));
+    }
+    if (max_turn_time > 0 && getTimeMs() > max_turn_time * 0.9) {
+      return std::make_pair(PlayerAction(impl::TIMEOUT_ACTION), 0);
     }
     int next_player_id = oppositePlayer(current_player_id);
-    std::pair<PlayerAction, int> bestActionWithScore(-1, -INF);
+    std::pair<PlayerAction, int> bestActionWithScore(PlayerAction(-1), -INF);
     for (int column = 0; column < W; ++column) {
       Simulator simulator(state.field);
       Action action(current_player_id, column);
       if (simulator.isValidAction(action)) {
+        simulator.makeAction(action);
         auto next_state = simulator.getState();
         auto actionWithScore = findBestAction(next_player_id,
                                               PlayerState(next_state.winner, player_id,
                                                           next_state.field),
                                               depth - 1);
+        if (actionWithScore.first.column == impl::TIMEOUT_ACTION) {
+          return actionWithScore;
+        }
+
         if (player_id != current_player_id) {
           actionWithScore.second *= -1;
         }
@@ -90,11 +97,19 @@ private:
         }
       }
     }
+    if (player_id != current_player_id) {
+      bestActionWithScore.second *= -1;
+    }
     return bestActionWithScore;
   }
 
   int player_id;
-
+  int max_turn_time;
+  int start_depth;
+  int end_depth;
+  bool print_debug_info;
+  std::unique_ptr<Scorer> scorer;
+  clock_t startTime = 0;
 };
 
 }; // namespace fantastic_four
