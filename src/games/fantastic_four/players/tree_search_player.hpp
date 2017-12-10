@@ -5,6 +5,7 @@
 #ifndef GAIL_TREE_SEARCH_PLAYER_HPP
 #define GAIL_TREE_SEARCH_PLAYER_HPP
 
+#include <iostream>
 #include <memory>
 #include <ctime>
 
@@ -17,7 +18,7 @@
 namespace gail {
 namespace fantastic_four {
 
-namespace impl {
+namespace tree_search {
   const int NO_ACTION = -1;
   const int TIMEOUT_ACTION = -2;
 }
@@ -60,20 +61,20 @@ private:
   std::pair<PlayerAction, int>
   findBestAction(int current_player_id, const PlayerState& state, int depth) {
     if (state.winner == player_id) {
-      return std::make_pair(PlayerAction(impl::NO_ACTION), INF);
+      return std::make_pair(PlayerAction(tree_search::NO_ACTION), INF);
     } else if (state.winner == oppositePlayer(player_id)) {
-      return std::make_pair(PlayerAction(impl::NO_ACTION), -INF);
+      return std::make_pair(PlayerAction(tree_search::NO_ACTION), -INF);
     } else if (state.winner == DRAW) {
-      return std::make_pair(PlayerAction(impl::NO_ACTION), 0);
+      return std::make_pair(PlayerAction(tree_search::NO_ACTION), 0);
     }
     if (depth == 0) {
-      return std::make_pair(PlayerAction(impl::NO_ACTION), scorer->score(state.field, player_id));
+      return std::make_pair(PlayerAction(tree_search::NO_ACTION), scorer->score(state.field, player_id));
     }
     if (max_turn_time > 0 && getTimeMs() > max_turn_time * 0.9) {
-      return std::make_pair(PlayerAction(impl::TIMEOUT_ACTION), 0);
+      return std::make_pair(PlayerAction(tree_search::TIMEOUT_ACTION), 0);
     }
     int next_player_id = oppositePlayer(current_player_id);
-    std::pair<PlayerAction, int> bestActionWithScore(PlayerAction(impl::NO_ACTION), -INF);
+    std::pair<PlayerAction, int> bestActionWithScore(PlayerAction(tree_search::NO_ACTION), -INF);
     for (int column = 0; column < W; ++column) {
       Simulator simulator(state.field);
       Action action(current_player_id, column);
@@ -84,7 +85,7 @@ private:
                                               PlayerState(next_state.winner, player_id,
                                                           next_state.field),
                                               depth - 1);
-        if (actionWithScore.first.column == impl::TIMEOUT_ACTION) {
+        if (actionWithScore.first.column == tree_search::TIMEOUT_ACTION) {
           return actionWithScore;
         }
 
@@ -94,7 +95,7 @@ private:
 
         // actionWithScore.second -= 1; // win faster, lose slowly
 
-        if (bestActionWithScore.first.column == impl::NO_ACTION ||
+        if (bestActionWithScore.first.column == tree_search::NO_ACTION ||
             actionWithScore.second > bestActionWithScore.second) {
           bestActionWithScore.first = PlayerAction(column);
           bestActionWithScore.second = actionWithScore.second;

@@ -83,6 +83,9 @@ public:
     refreshStateIfNeeded();
 
     if (state.winner == NO_PLAYER) {
+      throw std::logic_error("get score for unfinished game");
+    }
+    if (state.winner == DRAW) {
       return 0;
     }
     if (state.winner == state.player_id) {
