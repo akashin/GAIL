@@ -5,6 +5,9 @@
 #ifndef GAIL_TREE_SEARCH_PLAYER_HPP
 #define GAIL_TREE_SEARCH_PLAYER_HPP
 
+#include <memory>
+#include <ctime>
+
 #include "../../../core/player.hpp"
 #include "../clients.hpp"
 #include "../simulator.hpp"
@@ -56,7 +59,6 @@ public:
 private:
   std::pair<PlayerAction, int>
   findBestAction(int current_player_id, const PlayerState& state, int depth) {
-#if 0 // TODO(gchebanov) should work without that
     if (state.winner == player_id) {
       return std::make_pair(PlayerAction(impl::NO_ACTION), INF);
     } else if (state.winner == oppositePlayer(player_id)) {
@@ -64,7 +66,6 @@ private:
     } else if (state.winner == DRAW) {
       return std::make_pair(PlayerAction(impl::NO_ACTION), 0);
     }
-#endif
     if (depth == 0) {
       return std::make_pair(PlayerAction(impl::NO_ACTION), scorer->score(state.field, player_id));
     }
@@ -72,7 +73,7 @@ private:
       return std::make_pair(PlayerAction(impl::TIMEOUT_ACTION), 0);
     }
     int next_player_id = oppositePlayer(current_player_id);
-    std::pair<PlayerAction, int> bestActionWithScore(PlayerAction(-1), -INF);
+    std::pair<PlayerAction, int> bestActionWithScore(PlayerAction(impl::NO_ACTION), -INF);
     for (int column = 0; column < W; ++column) {
       Simulator simulator(state.field);
       Action action(current_player_id, column);
@@ -91,7 +92,10 @@ private:
           actionWithScore.second *= -1;
         }
 
-        if (actionWithScore.second > bestActionWithScore.second) {
+        // actionWithScore.second -= 1; // win faster, lose slowly
+
+        if (bestActionWithScore.first.column == impl::NO_ACTION ||
+            actionWithScore.second > bestActionWithScore.second) {
           bestActionWithScore.first = PlayerAction(column);
           bestActionWithScore.second = actionWithScore.second;
         }

@@ -6,6 +6,7 @@
 #define GAIL_PLAYERS_HPP
 
 #include <algorithm>
+#include <ctime>
 #include <cmath>
 #include <limits>
 #include <random>

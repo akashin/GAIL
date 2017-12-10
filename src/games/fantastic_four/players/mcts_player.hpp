@@ -1,6 +1,9 @@
 #ifndef GAIL_STRATEGY_MCTS_PLAYER_HPP
 #define GAIL_STRATEGY_MCTS_PLAYER_HPP
 
+#include <memory>
+#include <ctime>
+
 #include "../simulator.hpp"
 #include "../../../core/player.hpp"
 #include "scorers.hpp"
@@ -32,6 +35,7 @@ public:
                + ")";
     }
 private:
+
     int player_id;
     int max_turn_time;
     int max_turn_sims;

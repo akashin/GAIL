@@ -8,6 +8,8 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include <ctime>
+#include <algorithm>
 
 #include "client.hpp"
 #include "player.hpp"
@@ -15,11 +17,15 @@
 namespace gail {
 
 struct MatchResult {
-  MatchResult(int turn_count, std::vector<int> scores)
-      : turn_count(turn_count), scores(std::move(scores)) {}
+  MatchResult(int turn_count, std::vector<int> scores, std::vector<clock_t> total_time)
+      : turn_count(turn_count)
+      , scores(std::move(scores))
+      , total_time(std::move(total_time)) {
+  }
 
   int turn_count;
   std::vector<int> scores;
+  std::vector<clock_t> total_time;
 };
 
 // Plays a game between multiple players until none of them have any possible moves.
@@ -36,13 +42,16 @@ MatchResult playMatch(std::vector<gail::Client<State, Action> *> clients,
     throw std::logic_error("There should be at least one client.");
   }
 
+  std::vector<clock_t> total_time(clients.size(), 0);
   int turn_count = 0;
   while (true) {
     bool had_moves = false;
     ++turn_count;
     for (int i = 0; i < clients.size(); ++i) {
       if (!clients[i]->isGameFinished()) {
+        clock_t t0 = clock();
         Action action = players[i]->takeAction(clients[i]->getState());
+        total_time[i] += clock() - t0;
         clients[i]->makeAction(action);
         had_moves = true;
         if (actions) {
@@ -55,11 +64,11 @@ MatchResult playMatch(std::vector<gail::Client<State, Action> *> clients,
     }
   }
 
-  std::vector<int> scores;
-  for (auto client : clients) {
-    scores.push_back(client->getScore());
-  }
-  return MatchResult(turn_count, std::move(scores));
+  std::vector<int> scores(clients.size());
+  std::transform(clients.begin(), clients.end(), scores.begin(), [] (Client<State, Action>* client) {
+    return client->getScore();
+  });
+  return MatchResult(turn_count, std::move(scores), std::move(total_time));
 }
 
 }; // namespace gail
