@@ -84,9 +84,9 @@ void playMatchGame() {
     {"print_debug_info",   true},
   });
   AlphaBettaPlayer second_player(SECOND_PLAYER, gail::Config {
-    {"start_depth",        1},
+    {"start_depth",        3},
     {"end_depth",          6},
-    // {"max_turn_time",      100},
+    {"max_turn_time",      100},
     {"cache_max_size",     16 * 1024},
     {"cache_min_depth",    2},
     {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
@@ -115,40 +115,6 @@ void playMatchGame() {
 }
 
 int main() {
-  // playMatchGame();
-  Simulator sim;
-  int depth = 6;
-  analyzeMatch<TreeSearchPlayer, AlphaBettaPlayer> (sim,
-               gail::Config {
-                   {"start_depth",      depth},
-                   {"end_depth",        depth},
-                   {"scorer",           static_cast<Scorer*>(new SimpleScorer())},
-                   {"print_debug_info", true},
-               },
-               gail::Config {
-                   {"start_depth",        depth},
-                   {"end_depth",          depth},
-                   {"cache_max_size",     16 * 1024},
-                   // {"cache_max_size",     0 * 1024},
-                   {"cache_min_depth",    2},
-                   {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
-                   {"print_debug_info",   true},
-               },
-               gail::Config {
-                   {"start_depth",      depth},
-                   {"end_depth",        depth},
-                   {"scorer",           static_cast<Scorer*>(new SimpleScorer())},
-                   {"print_debug_info", true},
-               },
-               gail::Config {
-                   {"start_depth",        depth},
-                   {"end_depth",          depth},
-                   {"cache_max_size",     16 * 1024},
-                   // {"cache_max_size",     0 * 1024},
-                   {"cache_min_depth",    2},
-                   {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
-                   {"print_debug_info",   true},
-               }
-  );
+  playMatchGame();
   return 0;
 }
