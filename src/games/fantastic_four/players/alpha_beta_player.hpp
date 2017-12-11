@@ -155,22 +155,24 @@ private:
     auto it = cache.end();
     if (depth >= cache_min_depth) {
       if (cache.size() < cache_max_size) {
-        it = cache.emplace(hf, -INF).first;
+        it = cache.emplace(hf, std::make_pair(-INF, INF)).first;
       } else {
         it = cache.find(hf);
       }
     }
-    size_t min_invalidate_size = cache.max_load_factor() * cache.bucket_count(); // (23.2.5/14)
     int next_player_id = oppositePlayer(current_player_id);
     std::pair<PlayerAction, int> bestActionWithScore(
         PlayerAction(alpha_betta::NO_ACTION), -INF);
     if (it != cache.end()) {
-      bestActionWithScore.second = it->second;
-      if (bestActionWithScore.second > -INF) {// > betta) {
-        return bestActionWithScore;
-      }
+      auto ab = it->second;
+      if (ab.second <= alpha) { bestActionWithScore.second = ab.second; return bestActionWithScore; }
+      if (ab.first >= betta) { bestActionWithScore.second = ab.first; return bestActionWithScore; }
+      if (ab.second < betta) betta = ab.second;
+      if (ab.first > alpha) alpha = ab.first;
+      if (alpha == betta) { bestActionWithScore.second = alpha; return bestActionWithScore; }
     }
 
+    int alpha0 = alpha;
     for (int column = 0; column < W; ++column) {
       Simulator simulator(state.field);
       Action action(current_player_id, column);
@@ -193,20 +195,23 @@ private:
         if (actionWithScore.second > bestActionWithScore.second) {
           bestActionWithScore.first = PlayerAction(column);
           bestActionWithScore.second = actionWithScore.second;
-          if (false && alpha <= actionWithScore.second) {
+          if (alpha < actionWithScore.second) {
             alpha = actionWithScore.second;
-            if (alpha > betta)
+            if (alpha >= betta)
               break;
           }
         }
       }
     }
+    it = cache.find(hf);
     if (it != cache.end()) {
-      if (cache.size() >= min_invalidate_size) {
-        it = cache.find(hf);
-      }
-      if (it->second < bestActionWithScore.second) {
-        it->second = bestActionWithScore.second;
+      if (bestActionWithScore.second <= alpha0) {
+        if (bestActionWithScore.second < it->second.second) it->second.second = bestActionWithScore.second;
+      } else if (bestActionWithScore.second >= betta) {
+        if (bestActionWithScore.second > it->second.first) it->second.first = bestActionWithScore.second;
+      } else {
+        it->second.first = bestActionWithScore.second;
+        it->second.second = bestActionWithScore.second;
       }
     }
     return bestActionWithScore;
@@ -219,7 +224,7 @@ private:
   bool print_debug_info;
   std::unique_ptr<Scorer> scorer;
   clock_t startTime = 0;
-  std::unordered_map<HashField, int, Hash> cache;
+  std::unordered_map<HashField, std::pair<int, int>, Hash> cache;
   size_t cache_max_size;
   int cache_min_depth;
 };
