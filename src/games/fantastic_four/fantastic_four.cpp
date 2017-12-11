@@ -19,14 +19,60 @@ void playStreamGame() {
   client.makeAction(player.takeAction(client.getState()));
 }
 
+template <typename P1, typename P2>
+void analyzeMatch(Simulator& sim,
+                  const gail::Config& c1, const gail::Config& c2,
+                  const gail::Config& c1h, const gail::Config& c2h
+) {
+  std::vector<PlayerAction> actions;
+  P1 p1(FIRST_PLAYER, c1);
+  P1 p1helper(SECOND_PLAYER, c1h);
+  P2 p2(SECOND_PLAYER, c2);
+  P2 p2helper(FIRST_PLAYER, c2h);
+  SimulatorClient cl1(FIRST_PLAYER, sim);
+  SimulatorClient cl2(SECOND_PLAYER, sim);
+  bool end = false;
+  std::array<clock_t, 2> total_time {0, 0};
+  while (!end) {
+    end = true;
+    if (!cl1.isGameFinished()) {
+      clock_t t1 = clock();
+      PlayerAction a1 = p1.takeAction(cl1.getState());
+      total_time[0] += clock() - t1;
+      PlayerAction a1helper = p2helper.takeAction(cl1.getState());
+      cl1.makeAction(a1);
+      actions.emplace_back(a1);
+      end = false;
+    }
+    if (!cl2.isGameFinished()) {
+      clock_t t2 = clock();
+      PlayerAction a2 = p2.takeAction(cl2.getState());
+      total_time[1] += clock() - t2;
+      PlayerAction a2helper = p1helper.takeAction(cl2.getState());
+      cl2.makeAction(a2);
+      actions.emplace_back(a2);
+      end = false;
+    }
+  }
+  std::cout << "Score for player 1 is " << cl1.getScore() <<
+    " time " << total_time[0] * 1000 / CLOCKS_PER_SEC << " ms" << std::endl;
+  std::cout << "Score for player 2 is " << cl2.getScore() <<
+    " time " << total_time[1] * 1000 / CLOCKS_PER_SEC << " ms" << std::endl;
+    std::cout << sim.getState().field << std::endl;
+  for (int i = 0; i < actions.size(); ++i) {
+    if (i) std::cout << ' ';
+    std::cout << actions[i].column;
+  }
+  std::cout << std::endl;
+}
+
 void playMatchGame() {
   Simulator simulator;
 
   if(0){int p = 1;
-  for(int m : {3,1,3,1,1,6,2,6,2,6,6,2}) {
-    simulator.makeAction(Action(p, m)); p = 3 - p;
-  }}
-
+    for(int m : {3,7,2}) {
+      simulator.makeAction(Action(p, m)); p = 3 - p;
+    }}
 
   SimulatorClient first_client(FIRST_PLAYER, simulator);
   SimulatorClient second_client(SECOND_PLAYER, simulator);
@@ -38,8 +84,9 @@ void playMatchGame() {
     {"print_debug_info",   true},
   });
   AlphaBettaPlayer second_player(SECOND_PLAYER, gail::Config {
-    {"start_depth",        3},
-    {"max_turn_time",      100},
+    {"start_depth",        1},
+    {"end_depth",          6},
+    // {"max_turn_time",      100},
     {"cache_max_size",     16 * 1024},
     {"cache_min_depth",    2},
     {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
@@ -68,6 +115,40 @@ void playMatchGame() {
 }
 
 int main() {
-  playMatchGame();
+  // playMatchGame();
+  Simulator sim;
+  int depth = 6;
+  analyzeMatch<TreeSearchPlayer, AlphaBettaPlayer> (sim,
+               gail::Config {
+                   {"start_depth",      depth},
+                   {"end_depth",        depth},
+                   {"scorer",           static_cast<Scorer*>(new SimpleScorer())},
+                   {"print_debug_info", true},
+               },
+               gail::Config {
+                   {"start_depth",        depth},
+                   {"end_depth",          depth},
+                   {"cache_max_size",     16 * 1024},
+                   // {"cache_max_size",     0 * 1024},
+                   {"cache_min_depth",    2},
+                   {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
+                   {"print_debug_info",   true},
+               },
+               gail::Config {
+                   {"start_depth",      depth},
+                   {"end_depth",        depth},
+                   {"scorer",           static_cast<Scorer*>(new SimpleScorer())},
+                   {"print_debug_info", true},
+               },
+               gail::Config {
+                   {"start_depth",        depth},
+                   {"end_depth",          depth},
+                   {"cache_max_size",     16 * 1024},
+                   // {"cache_max_size",     0 * 1024},
+                   {"cache_min_depth",    2},
+                   {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
+                   {"print_debug_info",   true},
+               }
+  );
   return 0;
 }

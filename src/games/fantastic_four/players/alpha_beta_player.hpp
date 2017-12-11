@@ -93,10 +93,11 @@ public:
       cache.clear();
       auto actionWithScore = findBestAction(player_id, state, HashField(state.field), depth, -INF, INF);
       if (actionWithScore.first.column < 0) break;
-      if (print_debug_info)
-      dbg = std::make_tuple(depth, getTimeMs(), actionWithScore.first.column, actionWithScore
-                                .second,
-                       cache.size());
+      if (print_debug_info) {
+        dbg = std::make_tuple(depth, getTimeMs(), actionWithScore.first.column, actionWithScore
+                                  .second,
+                              cache.size());
+      }
       if (actionWithScore.second < -INF / 2) break;
       best_action = actionWithScore.first;
       if (actionWithScore.second > INF / 2) break;
@@ -106,6 +107,7 @@ public:
                 " depth: " << std::get<0>(dbg) <<
                 " time: " << std::get<1>(dbg) <<
                 " action: " << std::get<2>(dbg) <<
+                " best: " << best_action.column <<
                 " score: " << std::get<3>(dbg) <<
                 " cache: " << std::get<4>(dbg) << std::endl;
     }
@@ -148,16 +150,14 @@ private:
     int next_player_id = oppositePlayer(current_player_id);
     std::pair<PlayerAction, int> bestActionWithScore(
         PlayerAction(alpha_betta::NO_ACTION), -INF);
-#if 0 // both doesnt work
     if (it != cache.end()) {
       bestActionWithScore.second = it->second;
+      if (bestActionWithScore.second > betta) {
+        return bestActionWithScore;
+      }
     }
-#endif
 
     for (int column = 0; column < W; ++column) {
-      if (alpha > betta) {
-        break;
-      }
       Simulator simulator(state.field);
       Action action(current_player_id, column);
       if (simulator.isValidAction(action)) {
@@ -174,18 +174,16 @@ private:
         if (actionWithScore.first.column == alpha_betta::TIMEOUT_ACTION) {
           return actionWithScore;
         }
-#if 0 // both doesnot work
-        if (actionWithScore.second < -betta) continue;
-        if (actionWithScore.second > -alpha) continue;
-#endif
         actionWithScore.second *= -1;
 
         if (actionWithScore.second > bestActionWithScore.second) {
-          if (alpha <= actionWithScore.second) {
-            alpha = actionWithScore.second + 1;
-          }
           bestActionWithScore.first = PlayerAction(column);
           bestActionWithScore.second = actionWithScore.second;
+          if (alpha <= actionWithScore.second) {
+            alpha = actionWithScore.second;
+            if (alpha > betta)
+              break;
+          }
         }
       }
     }

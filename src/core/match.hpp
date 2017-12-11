@@ -33,7 +33,8 @@ struct MatchResult {
 template <typename State, typename Action>
 MatchResult playMatch(std::vector<gail::Client<State, Action> *> clients,
                       std::vector<gail::Player<State, Action> *> players,
-                      std::vector<Action> *actions = nullptr
+                      std::vector<Action> *actions = nullptr,
+                      int skip_first_clients = 0
 ) {
   if (clients.size() != players.size()) {
     throw std::logic_error("Number of clients should be the same as number of players.");
@@ -48,6 +49,8 @@ MatchResult playMatch(std::vector<gail::Client<State, Action> *> clients,
     bool had_moves = false;
     ++turn_count;
     for (int i = 0; i < clients.size(); ++i) {
+      if (skip_first_clients-- > 0)
+        continue;
       if (!clients[i]->isGameFinished()) {
         clock_t t0 = clock();
         Action action = players[i]->takeAction(clients[i]->getState());
