@@ -144,7 +144,6 @@ private:
     } else if (state.winner == DRAW) {
       return std::make_pair(PlayerAction(alpha_betta::NO_ACTION), 0);
     }
-    size_t min_invalidate_size = cache.max_load_factor() * cache.bucket_count(); // (23.2.5/14)
     if (depth == 0) {
       return std::make_pair(PlayerAction(alpha_betta::NO_ACTION),
                             scorer->score(state.field, current_player_id));
@@ -161,12 +160,13 @@ private:
         it = cache.find(hf);
       }
     }
+    size_t min_invalidate_size = cache.max_load_factor() * cache.bucket_count(); // (23.2.5/14)
     int next_player_id = oppositePlayer(current_player_id);
     std::pair<PlayerAction, int> bestActionWithScore(
         PlayerAction(alpha_betta::NO_ACTION), -INF);
     if (it != cache.end()) {
       bestActionWithScore.second = it->second;
-      if (bestActionWithScore.second > betta) {
+      if (bestActionWithScore.second > -INF) {// > betta) {
         return bestActionWithScore;
       }
     }
@@ -183,7 +183,7 @@ private:
         auto actionWithScore = findBestAction(next_player_id,
                                               PlayerState(next_state.winner, player_id,
                                                           next_state.field),
-                                              hf.make(current_player_id, column, row),
+                                              hf.make(current_player_id, row, column),
                                               depth - 1, -betta, -alpha);
         if (actionWithScore.first.column == alpha_betta::TIMEOUT_ACTION) {
           return actionWithScore;
@@ -193,7 +193,7 @@ private:
         if (actionWithScore.second > bestActionWithScore.second) {
           bestActionWithScore.first = PlayerAction(column);
           bestActionWithScore.second = actionWithScore.second;
-          if (alpha <= actionWithScore.second) {
+          if (false && alpha <= actionWithScore.second) {
             alpha = actionWithScore.second;
             if (alpha > betta)
               break;
