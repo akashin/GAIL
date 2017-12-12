@@ -8,8 +8,10 @@
 #include "players/random_player.hpp"
 #include "players/tree_search_player.hpp"
 #include "players/alpha_beta_player.hpp"
+#include "players/mcts_player.hpp"
 #include "players/scorers.hpp"
 #include "players/search_with_scorer_player.hpp"
+#include <random>
 
 using namespace gail::fantastic_four;
 
@@ -69,8 +71,8 @@ void analyzeMatch(Simulator& sim,
 void playMatchGame() {
   Simulator simulator;
 
-  if(1) { int p = 2;
-    for (int m: {0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 7, 1, 3, 2, 3, 2, 6}) {
+  if(0) { int p = 2;
+    for (int m: {0, 2, 0, 3, 0}) {
       simulator.makeAction(Action(p = 3 - p, m));
     }
   }
@@ -78,21 +80,23 @@ void playMatchGame() {
   SimulatorClient first_client(FIRST_PLAYER, simulator);
   SimulatorClient second_client(SECOND_PLAYER, simulator);
 
-  TreeSearchPlayer first_player(FIRST_PLAYER, gail::Config {
-    {"start_depth",        7},
-    {"end_depth",          7},
-    // {"max_turn_time",      1000},
-    {"cache_max_size",     16 * 1024},
+  AlphaBettaPlayer first_player(FIRST_PLAYER, gail::Config {
+    {"start_depth",        3},
+    // {"end_depth",          7},
+    {"max_turn_time",      1000},
+    {"cache_max_size",     32 * 1024},
     {"cache_min_depth",    2},
     {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
     {"print_debug_info",   true},
   });
-  AlphaBettaPlayer second_player(SECOND_PLAYER, gail::Config {
-    {"start_depth",        3},
+  int seed = 0;
+  std::minstd_rand rnd0(seed);
+  auto sc = new MCScorerOpt<std::minstd_rand> (rnd0);
+  MCTSPlayer<std::mt19937> second_player(SECOND_PLAYER, gail::Config {
     {"max_turn_time",      100},
-    {"cache_max_size",     16 * 1024},
-    {"cache_min_depth",    2},
-    {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
+    {"max_turn_sims",      0},
+    {"rnd",                new std::mt19937(seed)},
+    {"scorer",             static_cast<Scorer*>(sc)},
     {"print_debug_info",   true},
   });
 
@@ -117,13 +121,35 @@ void playMatchGame() {
   std::cout << std::endl;
 }
 
-void test() {
-  Simulator simulator;
-  if(1) { int p = 2;
-    for (int m: {0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 7, 1, 3, 2, 3, 2, 6}) {
-      simulator.makeAction(Action(p = 3 - p, m));
-    }
+void testMCTS(Simulator simulator, int seed = 0) {
+  SimulatorClient client(FIRST_PLAYER, simulator);
+  std::minstd_rand rnd0(seed);
+  auto sc = new MCScorerOpt<std::minstd_rand> (rnd0);
+  MCTSPlayer<std::mt19937> player(FIRST_PLAYER, gail::Config {
+      {"max_turn_time",      0},
+      {"max_turn_sims",      10000},
+      {"rnd",                new std::mt19937(seed)},
+      {"scorer",             static_cast<Scorer*>(sc)},
+      {"print_debug_info",   true},
+  });
+  auto action = player.takeAction(client.getState());
+}
+
+void testMC(Field field) {
+  std::mt19937 rnd(0);
+  int s = 0, n = 240000;
+  for (int i = 0; i < n; ++i) {
+    std::minstd_rand rnd0(rnd());
+    // MCScorer<std::minstd_rand> scorer(rnd0);
+    MCScorerOpt<std::minstd_rand> scorer(rnd0);
+    int sc = scorer.score(field, FIRST_PLAYER);
+    s += sc / LARGE_SCORE;
   }
+  std::cerr << double(s) / n << std::endl;
+  std::cerr << clock() * 1000.0 / CLOCKS_PER_SEC << std::endl;
+}
+
+void test(Simulator simulator) {
   SimulatorClient first_client(FIRST_PLAYER, simulator);
   TreeSearchPlayer first_player(FIRST_PLAYER, gail::Config {
       {"start_depth",        7},
@@ -138,7 +164,15 @@ void test() {
 }
 
 int main() {
+  Simulator simulator;
+  if(0) { int p = 2;
+    for (int m: {0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 7, 1, 3, 2, 3, 2, 6}) {
+      simulator.makeAction(Action(p = 3 - p, m));
+    }
+  }
   playMatchGame();
+  // testMC(simulator.getState().field);
+  // testMCTS(simulator);
   // test();
   return 0;
 }

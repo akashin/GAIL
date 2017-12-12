@@ -49,6 +49,7 @@ public:
   HashField(uint64_t h = 0) : h(h) {}
   bool operator == (const HashField& o) const { return h == o.h; }
   bool operator != (const HashField& o) const { return h != o.h; }
+  bool operator < (const HashField& o) const { return h < o.h; }
   HashField make(int player, int i, int j) const {
     if (player == FIRST_PLAYER) return HashField(h ^ hash_array0[i * W + j]);
     if (player == SECOND_PLAYER) return HashField(h ^ hash_array1[i * W + j]);
@@ -69,6 +70,13 @@ struct Hash {
     return hf.h;
   }
 };
+
+int upperRow(const Field& f, int column) {
+  int row = 0;
+  while (row < H && f[row][column] == 0) ++row;
+  assert(row > 0);
+  return row - 1;
+}
 
 int lastRow(const Field& f, int column) {
   int row = 0;

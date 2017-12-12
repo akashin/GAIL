@@ -5,6 +5,7 @@
 #ifndef GAIL_SCORERS_HPP
 #define GAIL_SCORERS_HPP
 
+#include <cassert>
 #include "../fantastic_four.hpp"
 
 namespace gail {
@@ -277,6 +278,74 @@ private:
       }
     }
     return score;
+  }
+};
+
+template<typename Rnd>
+class MCScorer : public Scorer {
+protected:
+  Rnd& rnd;
+  virtual size_t rnd_index(size_t n) {
+    return std::uniform_int_distribution<size_t>(0, n - 1)(rnd);
+  }
+public:
+  MCScorer(Rnd& rnd) : rnd(rnd) {}
+  virtual ~MCScorer() = default;
+  int score(const Field& field, int id) override {
+    Simulator sim(field);
+    std::array<int, W> moves;
+    int p = sim.deduceExpectedPlayer(field);
+    while (sim.getState().winner == NO_PLAYER) {
+      size_t cmoves = 0;
+      for (int i = 0; i < W; ++i) {
+        if (sim.isValidAction(Action(p, i))) {
+          moves[cmoves++] = i;
+        }
+      }
+      int move = moves[rnd_index(cmoves)];
+      sim.makeAction({p, move});
+      p = oppositePlayer(p);
+    }
+    int w = sim.getState().winner;
+    if (w == id) return LARGE_SCORE;
+    if (w == oppositePlayer(id)) return -LARGE_SCORE;
+    assert(w == DRAW);
+    return 0;
+  }
+};
+
+template<typename Rnd>
+class MCScorerOpt : public MCScorer<Rnd> {
+protected:
+  using MCScorer<Rnd>::rnd;
+  typename Rnd::result_type data;
+  int data_bits;
+  typename Rnd::result_type get_bits(int bits) {
+    if (data_bits < bits) {
+      auto r = data & ((1 << data_bits) - 1);
+      data = rnd();
+      r |= (data & ((1 << (bits - data_bits)) - 1)) << (data_bits);
+      data >>= bits - data_bits;
+      data_bits = data_bits + sizeof(data) * 8 - bits;
+      return r;
+    }
+    auto r = (data) & ((1 << bits) - 1);
+    data >>= bits;
+    data_bits -= bits;
+    return r;
+  }
+
+  virtual size_t rnd_index(size_t n) override {
+    int bt = 0;
+    while ((1 << bt) < n) ++bt;
+    size_t i;
+    do {
+      i = get_bits(bt);
+    } while (i >= n);
+    return i;
+  }
+public:
+  MCScorerOpt(Rnd& rnd) : MCScorer<Rnd>(rnd), data(), data_bits(0) {
   }
 };
 

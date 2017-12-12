@@ -74,7 +74,6 @@ public:
     return State(winner, field);
   }
 
-private:
   static int deduceExpectedPlayer(const Field& field) {
     std::array<int, 3> counts{};
     for (int row = 0; row < H; ++row) {
@@ -88,6 +87,7 @@ private:
     return SECOND_PLAYER;
   }
 
+private:
   void validateAction(const Action& action) {
     if (action.player_id != expected_player_id) {
       std::cerr << field;
