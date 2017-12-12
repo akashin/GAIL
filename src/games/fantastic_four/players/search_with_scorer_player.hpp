@@ -16,6 +16,7 @@
 #include "../simulator.hpp"
 #include "../../../core/player.hpp"
 #include "scorers.hpp"
+#include "score_utils.hpp"
 #include "../clients.hpp"
 #include "../../../utils/config.hpp"
 
@@ -45,10 +46,6 @@ HashType hashMove(int h, int w, int id) {
   return std::make_pair(1ll << part1, 1ll << part2);
 }
 
-const int NO_ACTION = -1;
-const int TIMEOUT_ACTION = -2;
-const int IN_CACHE_ACTION = -3;
-
 int putInplace(Field& field, int w, int id) {
   if (field[0][w] != 0) {
     std::cerr << std::endl << w << std::endl << field;
@@ -68,13 +65,14 @@ bool isFull(const Field& field, int w) {
 }
 
 struct Decision {
-  Decision() = default;
+  Decision()
+      : w(NO_ACTION), score(0) {}
 
-  Decision(int w, float score)
+  Decision(PlayerAction w, float score)
       : w(w), score(score) {}
 
-  int w = 0;
-  float score = 0;
+  PlayerAction w;
+  float score;
 };
 
 const float SCORE_DECAY = 0.9f;
@@ -105,7 +103,7 @@ public:
            + ")";
   }
 
-  int solve(Field field, int id) {
+  PlayerAction solve(Field field, int id) {
     startTime = clock();
 
     std::vector<int> availableW;
@@ -118,7 +116,7 @@ public:
     availableSize = static_cast<int>(availableW.size());
     HashType stateHash;
 
-    int bestW = NO_ACTION;
+    PlayerAction bestW = NO_ACTION;
     int depth = start_depth;
     for (; depth < 8 * 8; ++depth) {
       scoreCache.clear();
@@ -166,7 +164,7 @@ public:
     }
 
     int enemy_id = oppositePlayer(id);
-    int minW = NO_ACTION;
+    PlayerAction minW(NO_ACTION);
     float minScore = 0;
     int minScoreCount = 0;
     for (int iw = 0; iw < availableSize; ++iw) {
@@ -206,7 +204,7 @@ public:
       }
 
       if (minW == NO_ACTION || decision.score <= minScore) {
-        minW = w;
+        minW = PlayerAction(w);
         if (decision.score == minScore) {
           ++minScoreCount;
         } else {

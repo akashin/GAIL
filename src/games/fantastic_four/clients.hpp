@@ -37,6 +37,16 @@ struct PlayerAction {
   explicit PlayerAction(int column)
       : column(column) {}
 
+  bool isCorrect() const {
+    return 0 <= column && column < W;
+  }
+  bool operator == (const PlayerAction& o) const {
+    return column == o.column;
+  }
+  bool operator != (const PlayerAction& o) const {
+    return column != o.column;
+  }
+
   int column;
 };
 

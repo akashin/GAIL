@@ -69,23 +69,26 @@ void analyzeMatch(Simulator& sim,
 void playMatchGame() {
   Simulator simulator;
 
-  if(0){int p = 1;
-    for(int m : {3,7,2}) {
-      simulator.makeAction(Action(p, m)); p = 3 - p;
-    }}
+  if(1) { int p = 2;
+    for (int m: {0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 7, 1, 3, 2, 3, 2, 6}) {
+      simulator.makeAction(Action(p = 3 - p, m));
+    }
+  }
 
   SimulatorClient first_client(FIRST_PLAYER, simulator);
   SimulatorClient second_client(SECOND_PLAYER, simulator);
 
   TreeSearchPlayer first_player(FIRST_PLAYER, gail::Config {
-    {"start_depth",        3},
-    {"max_turn_time",      1000},
+    {"start_depth",        7},
+    {"end_depth",          7},
+    // {"max_turn_time",      1000},
+    {"cache_max_size",     16 * 1024},
+    {"cache_min_depth",    2},
     {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
     {"print_debug_info",   true},
   });
   AlphaBettaPlayer second_player(SECOND_PLAYER, gail::Config {
     {"start_depth",        3},
-    {"end_depth",          6},
     {"max_turn_time",      100},
     {"cache_max_size",     16 * 1024},
     {"cache_min_depth",    2},
@@ -114,7 +117,28 @@ void playMatchGame() {
   std::cout << std::endl;
 }
 
+void test() {
+  Simulator simulator;
+  if(1) { int p = 2;
+    for (int m: {0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 7, 1, 3, 2, 3, 2, 6}) {
+      simulator.makeAction(Action(p = 3 - p, m));
+    }
+  }
+  SimulatorClient first_client(FIRST_PLAYER, simulator);
+  TreeSearchPlayer first_player(FIRST_PLAYER, gail::Config {
+      {"start_depth",        7},
+      {"end_depth",          7},
+      // {"max_turn_time",      1000},
+      {"cache_max_size",     16 * 1024},
+      {"cache_min_depth",    2},
+      {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
+      {"print_debug_info",   true},
+  });
+  first_player.takeAction(first_client.getState());
+}
+
 int main() {
   playMatchGame();
+  // test();
   return 0;
 }

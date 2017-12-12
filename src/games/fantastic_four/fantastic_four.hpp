@@ -41,8 +41,19 @@ bool isOnField(int h, int w) {
   return (h >= 0 && w >= 0) && (h < H && w < W);
 }
 
+bool canMove(const Field& f, int col) {
+  return f[0][col] == NO_PLAYER;
+}
 
-}; // namespace fantastic_four
-}; // namespace gail
+int firstPossibleMove(const Field& f) {
+  for (int col = 0; col < W; ++col) {
+    if (canMove(f, col))
+      return col;
+  }
+  return -1;
+}
+
+} // namespace fantastic_four
+} // namespace gail
 
 #endif //GAIL_FANTASTIC_FOUR_HPP

@@ -14,14 +14,11 @@
 #include "../simulator.hpp"
 #include "../../../utils/config.hpp"
 #include "scorers.hpp"
+#include "score_utils.hpp"
+#include "hasher.hpp"
 
 namespace gail {
 namespace fantastic_four {
-
-namespace tree_search {
-  const int NO_ACTION = -1;
-  const int TIMEOUT_ACTION = -2;
-}
 
 class TreeSearchPlayer : public Player<PlayerState, PlayerAction> {
 public:
@@ -32,22 +29,37 @@ public:
     end_depth = config.get("end_depth", 8 * 7);
     max_turn_time = config.get<int>("max_turn_time", 0);
     print_debug_info = config.get("print_debug_info", false);
+    cache_max_size = config.get("cache_max_size", 0);
+    cache_min_depth = config.get("cache_min_depth", 0);
   }
 
   PlayerAction takeAction(const PlayerState& state) override {
-    PlayerAction best_action(-1);
+    PlayerAction best_action(NO_ACTION);
     startTime = clock();
+    std::tuple<int, int, ActionWithScore, size_t> dbg;
+    HashField hf(state.field);
     for (int depth = start_depth; depth <= end_depth; ++depth) {
-      auto actionWithScore = findBestAction(player_id, state, depth);
-      if (actionWithScore.first.column < 0) break;
-      best_action = actionWithScore.first;
+      cache.clear();
+      auto actionWithScore = findBestAction(player_id, state, hf, depth);
+      if (!actionWithScore.action.isCorrect()) break;
       if (print_debug_info) {
-        std::cerr << "[tsp]" <<
-          " depth: " << depth <<
-          " time: " << getTimeMs() <<
-          " action: " << actionWithScore.first.column <<
-          " score: " << actionWithScore.second << std::endl;
+        dbg = std::make_tuple(depth, getTimeMs(), actionWithScore, cache.size());
       }
+      if (actionWithScore.score < -INF / 2) break;
+      best_action = actionWithScore.action;
+      if (actionWithScore.score > INF / 2) break;
+    }
+    if (print_debug_info) {
+      std::cerr << "[tsp]" <<
+                " depth: " << std::get<0>(dbg) <<
+                " time: " << std::get<1>(dbg) <<
+                " action: " << std::get<2>(dbg).action.column <<
+                " best: " << best_action.column <<
+                " score: " << std::get<2>(dbg).score <<
+                " cache: " << std::get<3>(dbg) << std::endl;
+    }
+    if (best_action == NO_ACTION) {
+      best_action.column = firstPossibleMove(state.field);
     }
     return best_action;
   }
@@ -58,54 +70,65 @@ public:
   }
 
 private:
-  std::pair<PlayerAction, int>
-  findBestAction(int current_player_id, const PlayerState& state, int depth) {
+  ActionWithScore
+  findBestAction(int current_player_id, const PlayerState& state, const HashField& hf, int depth) {
     if (state.winner == player_id) {
-      return std::make_pair(PlayerAction(tree_search::NO_ACTION), INF);
+      return {INF};
     } else if (state.winner == oppositePlayer(player_id)) {
-      return std::make_pair(PlayerAction(tree_search::NO_ACTION), -INF);
+      return {-INF};
     } else if (state.winner == DRAW) {
-      return std::make_pair(PlayerAction(tree_search::NO_ACTION), 0);
+      return {0};
     }
-    if (depth == 0) {
-      return std::make_pair(PlayerAction(tree_search::NO_ACTION), scorer->score(state.field, player_id));
+    ActionWithScore best{current_player_id == player_id ? -INF : INF};
+    auto it = cache.end();
+    bool found = false;
+    if (depth >= cache_min_depth && cache.size() < cache_max_size) {
+      if (depth == 0) {
+        best = {scorer->score(state.field, player_id)};
+        cache.emplace(hf, best.score);
+        return best;
+      } else {
+        auto pit = cache.emplace(hf, best.score);
+        it = pit.first;
+        found = !pit.second;
+      }
+    } else if (cache_max_size) {
+      it = cache.find(hf);
+      found = it != cache.end();
     }
+    if (found) return {it->second};
+    if (depth == 0) return {scorer->score(state.field, player_id)};
     if (max_turn_time > 0 && getTimeMs() > max_turn_time * 0.9) {
-      return std::make_pair(PlayerAction(tree_search::TIMEOUT_ACTION), 0);
+      return {};
     }
     int next_player_id = oppositePlayer(current_player_id);
-    std::pair<PlayerAction, int> bestActionWithScore(PlayerAction(tree_search::NO_ACTION), -INF);
     for (int column = 0; column < W; ++column) {
       Simulator simulator(state.field);
       Action action(current_player_id, column);
       if (simulator.isValidAction(action)) {
         simulator.makeAction(action);
         auto next_state = simulator.getState();
-        auto actionWithScore = findBestAction(next_player_id,
-                                              PlayerState(next_state.winner, player_id,
-                                                          next_state.field),
-                                              depth - 1);
-        if (actionWithScore.first.column == tree_search::TIMEOUT_ACTION) {
-          return actionWithScore;
+        int row = lastRow(next_state.field, column);
+        HashField nhf = hf;
+        if (cache_max_size && depth >= cache_min_depth)
+          nhf = hf.make(current_player_id, row, column);
+        auto counter = findBestAction(next_player_id,
+                                      PlayerState(next_state.winner, player_id,
+                                                  next_state.field),
+                                      (cache_max_size && depth >= cache_min_depth) ? hf.make
+                                          (current_player_id, row, column) : hf,
+                                      depth - 1);
+        if (counter.action == TIMEOUT_ACTION) {
+          return {};
         }
-
-        if (player_id != current_player_id) {
-          actionWithScore.second *= -1;
-        }
-
-        // actionWithScore.second -= 1; // win faster, lose slowly
-
-        if (bestActionWithScore.first.column == tree_search::NO_ACTION ||
-            actionWithScore.second > bestActionWithScore.second) {
-          bestActionWithScore.first = PlayerAction(column);
-          bestActionWithScore.second = actionWithScore.second;
+        if (best.action == NO_ACTION ||
+            (current_player_id == player_id && counter.score > best.score) &&
+            (next_player_id == player_id && counter.score < best.score)) {
+          best = {PlayerAction(column), counter.score};
         }
       }
     }
-    if (player_id != current_player_id) {
-      bestActionWithScore.second *= -1;
-    }
-    return bestActionWithScore;
+    return best;
   }
 
   int player_id;
@@ -115,9 +138,12 @@ private:
   bool print_debug_info;
   std::unique_ptr<Scorer> scorer;
   clock_t startTime = 0;
+  std::unordered_map<HashField, int, Hash> cache;
+  size_t cache_max_size;
+  int cache_min_depth;
 };
 
-}; // namespace fantastic_four
-}; // namespace gail
+} // namespace fantastic_four
+} // namespace gail
 
 #endif //GAIL_TREE_SEARCH_PLAYER_HPP
