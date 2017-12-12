@@ -14,7 +14,10 @@ template <typename State, typename Action>
 class StreamClientBase : public Client<State, Action> {
 public:
   StreamClientBase(std::istream& state_input_stream, std::ostream& action_output_stream)
-      : state_input_stream(state_input_stream), action_output_stream(action_output_stream) {}
+      : Client<State, Action>()
+      , state_input_stream(state_input_stream)
+      , action_output_stream(action_output_stream) {
+  }
 
   ~StreamClientBase() override = default;
 

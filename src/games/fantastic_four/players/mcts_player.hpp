@@ -87,7 +87,7 @@ private:
 
   const HashField& getHF(MCTSNode* t) {
     using pair = std::pair<HashField, MCTSNode>;
-    ssize_t off = offsetof(pair, second);
+    size_t off = __builtin_offsetof(pair, second);
     return *reinterpret_cast<HashField*>(reinterpret_cast<char*>(t) - off);
   }
 
@@ -157,7 +157,7 @@ private:
 
   MCTSNode* getNode(const HashField& hf) {
     auto it = tree.lower_bound(hf);
-    if (it->first != hf) {
+    if (it == tree.end() || it->first != hf) {
       it = tree.emplace_hint(it, hf, MCTSNode());
     }
     return &(it->second);

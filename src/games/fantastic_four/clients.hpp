@@ -27,7 +27,19 @@ struct PlayerState {
 std::istream& operator>>(std::istream& is, PlayerState& state) {
   for (int row = 0; row < H; ++row) {
     for (int col = 0; col < W; ++col) {
-      is >> state.field[row][col];
+      char c;
+      is >> c;
+      switch (c) {
+        case '1':
+          state.field[row][col] = FIRST_PLAYER;
+          break;
+        case '2':
+          state.field[row][col] = SECOND_PLAYER;
+          break;
+        default:
+          state.field[row][col] = NO_PLAYER;
+          break;
+      }
     }
   }
   return is;
