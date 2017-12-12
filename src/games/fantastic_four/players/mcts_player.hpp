@@ -34,20 +34,21 @@ public:
     scorer.reset(config.get<Scorer *>("scorer"));
     max_turn_time = config.get<int>("max_turn_time");
     max_turn_sims = config.get<int>("max_turn_sims");
+    bucket_sims = config.get<int>("bucket_sims", 1);
     print_debug_info = config.get("print_debug_info", false);
     C = config.get("C", 1.0);
   }
 
-  PlayerAction takeAction(const PlayerState &state) override {
-    startTime = clock();
-    HashField hf(state.field);
-    auto* root = getNode(hf); root->st = state;
-    int sims = 0;
-    while (true) {
-      if (max_turn_sims && ++sims > max_turn_sims) break;
-      if (max_turn_time && getTimeMs() >= max_turn_time) break;
-      go(root);
+
+  void probAction(const PlayerState& state, std::array<int, 8>& prob) {
+    auto root = mcts(state);
+    for (int i = 0; i < W; ++i) {
+      prob[i] = root->child[i] ? root->child[i]->trials : 0;
     }
+  }
+
+  PlayerAction takeAction(const PlayerState &state) override {
+    auto root = mcts(state);
     auto best = mostTrials(root);
     if (print_debug_info) {
       auto score = root->trials ? double(root->score)/root->trials : 0;
@@ -75,6 +76,20 @@ public:
              + ")";
   }
 private:
+  MCTSNode* mcts(const PlayerState& state) {
+    tree.clear();
+    startTime = clock();
+    HashField hf(state.field);
+    auto* root = getNode(hf); root->st = state;
+    int sims = 0;
+    while (true) {
+      if (max_turn_sims && (sims += bucket_sims) > max_turn_sims) break;
+      if (max_turn_time && getTimeMs() >= max_turn_time) break;
+      go(root);
+    }
+    return root;
+  }
+
   ActionWithScore mostTrials(MCTSNode* t) {
     ActionWithScore best{0};
     for (int i = 0; i < W; ++i) {
@@ -122,17 +137,19 @@ private:
     }
     int r = 0;
     if (t->st.winner == NO_PLAYER) {
-      int sc = scorer->score(t->st.field, t->st.player_id);
-      r = (sc > 0 ? 1: (sc < 0 ? -1: 0));
+      for (int sims = 0; sims < bucket_sims; ++sims) {
+        int sc = scorer->score(t->st.field, t->st.player_id);
+        r += (sc > 0 ? 1 : (sc < 0 ? -1 : 0));
+      }
     } else if (t->st.winner == t->st.player_id) {
-      r = 1;
+      r = bucket_sims;
     } else if (t->st.winner == oppositePlayer(t->st.player_id)) {
-      r = -1;
+      r = -bucket_sims;
     }
-    t->score += r; t->trials += 1;
+    t->score += r; t->trials += bucket_sims;
     while (ss > 0) {
       r = -r; t = stack[--ss];
-      t->score += r; t->trials += 1;
+      t->score += r; t->trials += bucket_sims;
     }
   }
 
@@ -166,6 +183,7 @@ private:
   int player_id;
   int max_turn_time;
   int max_turn_sims;
+  int bucket_sims;
   double C;
   bool print_debug_info;
   std::unique_ptr<Rnd> rnd;

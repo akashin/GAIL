@@ -12,6 +12,8 @@
 #include "players/scorers.hpp"
 #include "players/search_with_scorer_player.hpp"
 #include <random>
+#include <fstream>
+#include <sstream>
 
 using namespace gail::fantastic_four;
 
@@ -71,32 +73,27 @@ void analyzeMatch(Simulator& sim,
 void playMatchGame() {
   Simulator simulator;
 
-  if(0) { int p = 2;
-    for (int m: {0, 2, 0, 3, 0}) {
-      simulator.makeAction(Action(p = 3 - p, m));
-    }
-  }
-
   SimulatorClient first_client(FIRST_PLAYER, simulator);
   SimulatorClient second_client(SECOND_PLAYER, simulator);
 
-  AlphaBettaPlayer first_player(FIRST_PLAYER, gail::Config {
-    {"start_depth",        3},
-    // {"end_depth",          7},
-    {"max_turn_time",      1000},
-    {"cache_max_size",     32 * 1024},
-    {"cache_min_depth",    2},
-    {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
+  int seed0 = 0;
+  std::minstd_rand rnd0(seed0);
+  auto sc0 = new MCScorerOpt<std::minstd_rand> (rnd0);
+  MCTSPlayer<std::mt19937> first_player(FIRST_PLAYER, gail::Config {
+    {"max_turn_time",      0},
+    {"max_turn_sims",      100000},
+    {"rnd",                new std::mt19937(seed0)},
+    {"scorer",             static_cast<Scorer*>(sc0)},
     {"print_debug_info",   true},
   });
-  int seed = 0;
-  std::minstd_rand rnd0(seed);
-  auto sc = new MCScorerOpt<std::minstd_rand> (rnd0);
+  int seed1 = 1;
+  std::minstd_rand rnd1(seed1);
+  auto sc1 = new MCScorerOpt<std::minstd_rand> (rnd1);
   MCTSPlayer<std::mt19937> second_player(SECOND_PLAYER, gail::Config {
-    {"max_turn_time",      100},
-    {"max_turn_sims",      0},
-    {"rnd",                new std::mt19937(seed)},
-    {"scorer",             static_cast<Scorer*>(sc)},
+    {"max_turn_time",      0},
+    {"max_turn_sims",      100000},
+    {"rnd",                new std::mt19937(seed1)},
+    {"scorer",             static_cast<Scorer*>(sc1)},
     {"print_debug_info",   true},
   });
 
@@ -163,6 +160,56 @@ void test(Simulator simulator) {
   first_player.takeAction(first_client.getState());
 }
 
+void createDb(int seed, int games) {
+  std::ofstream db("db.txt", std::ios_base::app);
+  auto dump = [&db] (int id, const Field& field, const std::array<int, W>& prob) {
+    std::ostringstream ss;
+    ss << (id == FIRST_PLAYER ? 0 : 1);
+    for (int i = 0; i < H; ++i) {
+      for (int j = 0; j < W; ++j) {
+        ss << ' ' << (field[i][j] == FIRST_PLAYER ? '1' : '0');
+        ss << ' ' << (field[i][j] == SECOND_PLAYER ? '1' : '0');
+      }
+    }
+    int sprob = 0;
+    for (int i = 0; i < W; ++i) sprob += prob[i];
+    for (int i = 0; i < W; ++i) ss << ' ' << (double)prob[i] / sprob;
+    ss << std::endl;
+    db << ss.str() << std::flush;
+  };
+  std::mt19937 rnd(seed);
+  for (int game = 0; game < games; ++game) {
+    int id = FIRST_PLAYER;
+    Simulator simulator;
+    SimulatorClient c0(FIRST_PLAYER, simulator);
+    SimulatorClient c1(SECOND_PLAYER, simulator);
+    std::vector<PlayerAction> g;
+    while (true) {
+      auto& c = (id == FIRST_PLAYER) ? c0 : c1;
+      if (c.isGameFinished()) break;
+      std::minstd_rand rnd0(rnd());
+      auto sc = new MCScorerOpt<std::minstd_rand>(rnd0);
+      MCTSPlayer<std::mt19937> player(id, gail::Config {
+          {"max_turn_time",    0},
+          {"max_turn_sims",    10000},
+          {"rnd",              new std::mt19937(rnd())},
+          {"scorer",           static_cast<Scorer*>(sc)},
+          {"print_debug_info", false},
+      });
+      std::array<int, 8> prob;
+      auto state = c.getState();
+      player.probAction(state, prob);
+      dump(state.player_id, state.field, prob);
+      PlayerAction action(std::max_element(begin(prob), end(prob)) - begin(prob));
+      c.makeAction(action);
+      g.emplace_back(action);
+      id = oppositePlayer(id);
+    }
+    // emit game
+    // for (auto m: g) std::cout << m << ' '; std::cout << std::endl;
+  }
+}
+
 int main() {
   Simulator simulator;
   if(0) { int p = 2;
@@ -170,7 +217,8 @@ int main() {
       simulator.makeAction(Action(p = 3 - p, m));
     }
   }
-  playMatchGame();
+  createDb(1, 10000);
+  // playMatchGame();
   // testMC(simulator.getState().field);
   // testMCTS(simulator);
   // test();
