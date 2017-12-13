@@ -1,0 +1,8 @@
+//
+// Created by user on 13/12/2017.
+//
+
+#ifndef GAIL_SIMPLE_ESTIMATOR_HPP
+#define GAIL_SIMPLE_ESTIMATOR_HPP
+
+#endif //GAIL_SIMPLE_ESTIMATOR_HPP
