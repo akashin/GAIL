@@ -52,7 +52,8 @@ public:
   bool operator < (const HashField& o) const { return h < o.h; }
   HashField make(int player, int i, int j) const {
     if (player == FIRST_PLAYER) return HashField(h ^ hash_array0[i * W + j]);
-    if (player == SECOND_PLAYER) return HashField(h ^ hash_array1[i * W + j]);
+    assert(player == SECOND_PLAYER);
+    return HashField(h ^ hash_array1[i * W + j]);
   }
   HashField(const Field& f) : h(0) {
     for (int i = 0; i < H; ++i) {

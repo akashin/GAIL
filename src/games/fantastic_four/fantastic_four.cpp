@@ -76,26 +76,57 @@ void playMatchGame() {
   SimulatorClient first_client(FIRST_PLAYER, simulator);
   SimulatorClient second_client(SECOND_PLAYER, simulator);
 
-  int seed0 = 0;
-  std::minstd_rand rnd0(seed0);
-  auto sc0 = new MCScorerOpt<std::minstd_rand> (rnd0);
-  MCTSPlayer<std::mt19937> first_player(FIRST_PLAYER, gail::Config {
-    {"max_turn_time",      0},
-    {"max_turn_sims",      100000},
-    {"rnd",                new std::mt19937(seed0)},
-    {"scorer",             static_cast<Scorer*>(sc0)},
+  int depth = 8;
+  AlphaBettaPlayer first_player(FIRST_PLAYER, gail::Config {
+    {"start_depth",        depth},
+    {"end_depth",          depth},
+    {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
+    {"cache_max_size",     32 * 1024},
+    {"me_min_depth",       2},
+    {"cache_min_depth",    2},
     {"print_debug_info",   true},
+    {"deterministic",      true},
   });
-  int seed1 = 1;
-  std::minstd_rand rnd1(seed1);
-  auto sc1 = new MCScorerOpt<std::minstd_rand> (rnd1);
-  MCTSPlayer<std::mt19937> second_player(SECOND_PLAYER, gail::Config {
-    {"max_turn_time",      0},
-    {"max_turn_sims",      100000},
-    {"rnd",                new std::mt19937(seed1)},
-    {"scorer",             static_cast<Scorer*>(sc1)},
+  AlphaBettaPlayer second_player(SECOND_PLAYER, gail::Config {
+    {"start_depth",        depth},
+    {"end_depth",          depth},
+    {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
+    {"cache_max_size",     32 * 1024},
+    {"cache_min_depth",    2},
+    {"me_min_depth",       2},
     {"print_debug_info",   true},
+    {"deterministic",      true},
   });
+  // uncached
+  // Game length: 25
+  // Score for player 0 is -1 time 5354 ms
+  // Score for player 1 is 1 time 5018 ms
+  // uncached me
+  // Game length: 25
+  // Score for player 0 is -1 time 4894 ms
+  // Score for player 1 is 1 time 3021 ms
+  // cached
+  // Score for player 0 is -1 time 2415 ms
+  // Score for player 1 is 1 time 2196 ms
+  // cached me
+  // Game length: 25
+  // Score for player 0 is -1 time 2187 ms
+  // Score for player 1 is 1 time 864 ms
+  // cached me swap
+  // Game length: 25
+  // Score for player 0 is -1 time 851 ms
+  // Score for player 1 is 1 time 2136 ms
+
+  // cache usage
+  // [abp] depth: 8 time: 534 action: 3 best: 3 score: -8 last_score: -8 cache: 16193
+  // [abp] depth: 8 time: 378 action: 2 best: 2 score: -28 last_score: -28 cache: 11893
+  // [abp] depth: 8 time: 350 action: 2 best: 2 score: -7 last_score: -7 cache: 11797
+  // [abp] depth: 8 time: 260 action: 2 best: 2 score: -34 last_score: -34 cache: 8928
+  // cache usage with me(2)-me(2)
+  // [abp] depth: 8 time: 108 action: 3 best: 3 score: -8 last_score: -8 cache: 3788
+  // [abp] depth: 8 time: 108 action: 2 best: 2 score: -28 last_score: -28 cache: 3355
+  // [abp] depth: 8 time: 38 action: 2 best: 2 score: -7 last_score: -7 cache: 1918
+  // [abp] depth: 8 time: 36 action: 2 best: 2 score: -34 last_score: -34 cache: 1741
 
   std::vector<PlayerAction> actions;
   auto match_results = gail::playMatch<PlayerState, PlayerAction>({&first_client, &second_client},
@@ -217,8 +248,7 @@ int main() {
       simulator.makeAction(Action(p = 3 - p, m));
     }
   }
-  createDb(1, 10000);
-  // playMatchGame();
+  playMatchGame();
   // testMC(simulator.getState().field);
   // testMCTS(simulator);
   // test();

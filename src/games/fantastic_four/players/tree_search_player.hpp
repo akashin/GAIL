@@ -122,7 +122,7 @@ private:
           return {};
         }
         if (best.action == NO_ACTION ||
-            (current_player_id == player_id && counter.score > best.score) &&
+            (current_player_id == player_id && counter.score > best.score) ||
             (next_player_id == player_id && counter.score < best.score)) {
           best = {PlayerAction(column), counter.score};
         }

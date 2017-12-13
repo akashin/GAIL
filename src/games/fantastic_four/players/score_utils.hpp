@@ -4,10 +4,6 @@
 namespace gail {
 namespace fantastic_four {
 
-const PlayerAction NO_ACTION{-1};
-const PlayerAction TIMEOUT_ACTION{-2};
-const PlayerAction IN_CACHE_ACTION{-3};
-
 struct ActionWithScore {
   PlayerAction action;
   int score;

@@ -46,6 +46,9 @@ std::istream& operator>>(std::istream& is, PlayerState& state) {
 }
 
 struct PlayerAction {
+  PlayerAction()
+      : column(-1) {}
+
   explicit PlayerAction(int column)
       : column(column) {}
 
@@ -61,6 +64,11 @@ struct PlayerAction {
 
   int column;
 };
+
+const PlayerAction NO_ACTION{};
+const PlayerAction TIMEOUT_ACTION{-2};
+const PlayerAction IN_CACHE_ACTION{-3};
+
 
 std::ostream& operator<<(std::ostream& os, const PlayerAction& action) {
   os << action.column;
