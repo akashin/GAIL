@@ -70,83 +70,60 @@ void analyzeMatch(Simulator& sim,
   std::cout << std::endl;
 }
 
-void playMatchGame() {
+int playMatchGame(int sims = 100000, bool swap = false, int seed = 0) {
   Simulator simulator;
 
-  SimulatorClient first_client(FIRST_PLAYER, simulator);
-  SimulatorClient second_client(SECOND_PLAYER, simulator);
+  SimulatorClient first_client(swap ? SECOND_PLAYER : FIRST_PLAYER, simulator);
+  SimulatorClient second_client(swap ? FIRST_PLAYER : SECOND_PLAYER, simulator);
 
-  int depth = 8;
-  AlphaBettaPlayer first_player(FIRST_PLAYER, gail::Config {
-    {"start_depth",        depth},
-    {"end_depth",          depth},
-    {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
-    {"cache_max_size",     32 * 1024},
-    {"me_min_depth",       2},
-    {"cache_min_depth",    2},
-    {"print_debug_info",   true},
-    {"deterministic",      true},
+  std::minstd_rand rnd0(seed);
+  auto sc = new MCScorerOpt<std::minstd_rand>(rnd0);
+  MCTSPlayer<std::mt19937> first_player(swap ? SECOND_PLAYER : FIRST_PLAYER, gail::Config {
+      {"max_turn_time",    0},
+      {"max_turn_sims",    sims},
+      {"rnd",              new std::mt19937(rnd0())},
+      {"scorer",           static_cast<Scorer*>(sc)},
+      {"print_debug_info", false},
   });
-  AlphaBettaPlayer second_player(SECOND_PLAYER, gail::Config {
-    {"start_depth",        depth},
-    {"end_depth",          depth},
-    {"scorer",             static_cast<Scorer*>(new SimpleScorer())},
-    {"cache_max_size",     32 * 1024},
-    {"cache_min_depth",    2},
-    {"me_min_depth",       2},
-    {"print_debug_info",   true},
-    {"deterministic",      true},
+  std::minstd_rand rnd1(seed + rnd0());
+  auto sc1 = new MCPPAScorer<std::minstd_rand>(rnd1, 0.1);
+  MCTSPlayer<std::mt19937> second_player(swap ? FIRST_PLAYER : SECOND_PLAYER, gail::Config {
+      {"max_turn_time",    0},
+      {"max_turn_sims",    sims},
+      // {"rnd",              static_cast<std::mt19937*>(nullptr)},
+      {"rnd",              new std::mt19937(rnd1())},
+      {"scorer",           static_cast<Scorer*>(sc1)},
+      {"print_debug_info", false},
   });
-  // uncached
-  // Game length: 25
-  // Score for player 0 is -1 time 5354 ms
-  // Score for player 1 is 1 time 5018 ms
-  // uncached me
-  // Game length: 25
-  // Score for player 0 is -1 time 4894 ms
-  // Score for player 1 is 1 time 3021 ms
-  // cached
-  // Score for player 0 is -1 time 2415 ms
-  // Score for player 1 is 1 time 2196 ms
-  // cached me
-  // Game length: 25
-  // Score for player 0 is -1 time 2187 ms
-  // Score for player 1 is 1 time 864 ms
-  // cached me swap
-  // Game length: 25
-  // Score for player 0 is -1 time 851 ms
-  // Score for player 1 is 1 time 2136 ms
-
-  // cache usage
-  // [abp] depth: 8 time: 534 action: 3 best: 3 score: -8 last_score: -8 cache: 16193
-  // [abp] depth: 8 time: 378 action: 2 best: 2 score: -28 last_score: -28 cache: 11893
-  // [abp] depth: 8 time: 350 action: 2 best: 2 score: -7 last_score: -7 cache: 11797
-  // [abp] depth: 8 time: 260 action: 2 best: 2 score: -34 last_score: -34 cache: 8928
-  // cache usage with me(2)-me(2)
-  // [abp] depth: 8 time: 108 action: 3 best: 3 score: -8 last_score: -8 cache: 3788
-  // [abp] depth: 8 time: 108 action: 2 best: 2 score: -28 last_score: -28 cache: 3355
-  // [abp] depth: 8 time: 38 action: 2 best: 2 score: -7 last_score: -7 cache: 1918
-  // [abp] depth: 8 time: 36 action: 2 best: 2 score: -34 last_score: -34 cache: 1741
 
   std::vector<PlayerAction> actions;
-  auto match_results = gail::playMatch<PlayerState, PlayerAction>({&first_client, &second_client},
-                                                                  {&first_player, &second_player},
-                                                                  &actions);
+  std::vector<gail::Client<PlayerState, PlayerAction>*> clients = {&first_client, &second_client};
+  std::vector<gail::Player<PlayerState, PlayerAction>*> players = {&first_player, &second_player};
+  if (swap) {
+    std::swap(clients[0], clients[1]);
+    std::swap(players[0], players[1]);
+  }
+  auto match_results = gail::playMatch<PlayerState, PlayerAction>(clients, players, &actions);
 
-  std::cout << "Game length: " << match_results.turn_count << std::endl;
-  for (int i = 0; i < match_results.scores.size(); ++i) {
-    std::cout << "Score for player " << i <<
-      " is " << match_results.scores[i] <<
-      " time " << match_results.total_time[i] * 1000 / CLOCKS_PER_SEC << " ms" <<
-      std::endl;
+  if (1) {
+    std::cout << "Game" <<
+      " swap: " << swap <<
+      " length: " << match_results.turn_count << std::endl;
+    for (int i = 0; i < match_results.scores.size(); ++i) {
+      std::cout << "Score for player " << i <<
+                " is " << match_results.scores[i] <<
+                " time " << match_results.total_time[i] * 1000 / CLOCKS_PER_SEC << " ms" <<
+                std::endl;
+    }
+    std::cout << "Final board state:" << std::endl;
+    std::cout << simulator.getState().field << std::endl;
+    for (int i = 0; i < actions.size(); ++i) {
+      if (i) std::cout << ' ';
+      std::cout << actions[i].column;
+    }
+    std::cout << std::endl;
   }
-  std::cout << "Final board state:" << std::endl;
-  std::cout << simulator.getState().field << std::endl;
-  for (int i = 0; i < actions.size(); ++i) {
-    if (i) std::cout << ' ';
-    std::cout << actions[i].column;
-  }
-  std::cout << std::endl;
+  return match_results.scores[1];
 }
 
 void testMCTS(Simulator simulator, int seed = 0) {
@@ -243,12 +220,17 @@ void createDb(int seed, int games) {
 
 int main() {
   Simulator simulator;
-  if(0) { int p = 2;
-    for (int m: {0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 7, 1, 3, 2, 3, 2, 6}) {
-      simulator.makeAction(Action(p = 3 - p, m));
-    }
+  std::vector<int> score0(3);
+  std::vector<int> score1(3);
+  for (int seed = 123123; ; ++seed) {
+    bool swap = seed % 2;
+    int s = playMatchGame(10000, swap, seed);
+    if (swap) score0[1-s] += 1;
+    else score1[1+s] += 1;
+    std::cout << '-' << score0[0] << '=' << score0[1] << '+' << score0[2] << std::endl;
+    std::cout << '-' << score1[0] << '=' << score1[1] << '+' << score1[2] << std::endl;
   }
-  playMatchGame();
+  // createDb(3, 10000);
   // testMC(simulator.getState().field);
   // testMCTS(simulator);
   // test();

@@ -159,6 +159,11 @@ private:
     for (int i = 0; i < W; ++i) score[i] -= w[i];
   }
 public:
+  int getScore(int col) const {
+    return score[col];
+  }
+  MoveEstimator() : score() {
+  }
   MoveEstimator(const Field& f, int player) {
     std::copy(lasso_e4_intercept.begin(),
       lasso_e4_intercept.end(),

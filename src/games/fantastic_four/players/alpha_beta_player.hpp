@@ -136,8 +136,7 @@ private:
         auto next_state = simulator.getState();
         int row = lastRow(next_state.field, column);
         auto counter = findBestAction(next_player_id,
-          PlayerState(next_state.winner, player_id,
-          next_state.field),
+          PlayerState(next_state.winner, player_id, next_state.field),
           cache_max_size ? hf.make(current_player_id, row, column) : hf,
           me_min_depth ? moveEstimator.make(current_player_id, row, column) : moveEstimator,
           depth - 1, -betta, -alpha + (deterministic ? 1 : 0));

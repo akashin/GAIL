@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include "../fantastic_four.hpp"
+#include "hasher.hpp"
 
 namespace gail {
 namespace fantastic_four {
@@ -289,7 +290,7 @@ protected:
     return std::uniform_int_distribution<size_t>(0, n - 1)(rnd);
   }
 public:
-  MCScorer(Rnd& rnd) : rnd(rnd) {}
+  MCScorer(Rnd& rnd) : Scorer(), rnd(rnd) {}
   virtual ~MCScorer() = default;
   int score(const Field& field, int id) override {
     Simulator sim(field);
@@ -346,6 +347,168 @@ protected:
   }
 public:
   MCScorerOpt(Rnd& rnd) : MCScorer<Rnd>(rnd), data(), data_bits(0) {
+  }
+};
+
+template<typename Rnd>
+class MCPPAScorer : public Scorer { // Playout Policy Adaptation with Move Features
+protected:
+  Rnd& rnd;
+  std::array<std::array<double, W * H>, 2> policy;
+  std::array<std::array<double, W * H>, 2> policy_exp;
+  double alpha;
+  void adapt(const Field& field,
+      std::array<std::pair<int, int>, W * H> history,
+      size_t chistory,
+      int player,
+      int winner) {
+    if(winner != 1 && winner != 2)
+      return;
+    Simulator sim(field);
+    std::array<double, W * H> polp = policy[winner - 1];
+    for (int i = 0; i < chistory; ++i) {
+      auto move = history[i];
+      auto code = move.first + move.second * W;
+      if (player != winner) { // WTF
+        polp[code] += alpha;
+        std::array<int, W> codes;
+        size_t ncodes = 0;
+        for (int j = 0; j < W; ++j) {
+          if (sim.isValidAction(Action(player, j))) {
+            codes[ncodes++] = j + upperRow(sim.getState().field, j) * W;
+          }
+        }
+        double z = 0;
+        for (int j = 0; j < ncodes; ++j) {
+          z += policy_exp[winner - 1][codes[j]];
+        }
+        for (int j = 0; j < ncodes; ++j) {
+          polp[codes[j]] -= alpha * policy_exp[winner - 1][codes[j]] / z;
+        }
+      }
+      sim.makeAction(Action(player, history[i].first));
+      player = oppositePlayer(player);
+    }
+    for (int i = 0; i < polp.size(); ++i) {
+      policy[winner - 1][i] = polp[i];
+      policy_exp[winner - 1][i] = exp(polp[i]);
+    }
+  }
+  int get_move(std::array<std::pair<int, int>, W> moves, size_t cmoves, int player) {
+    // return std::uniform_int_distribution<int>(0, cmoves -1)(rnd);
+    double z = 0;
+    for (int i = 0; i < cmoves; ++i) {
+      int code = moves[i].first + moves[i].second;
+      z += policy_exp[player - 1][code];
+    }
+    double w = std::uniform_real_distribution<double> (0, z)(rnd);
+    for (int i = 0; i < cmoves; ++i) {
+      int code = moves[i].first + moves[i].second;
+      double p = policy_exp[player - 1][code];
+      if (w < p) return i;
+      w -= p;
+    }
+    return cmoves - 1;
+  }
+public:
+  MCPPAScorer(Rnd& rnd, double alpha = 0.01) : Scorer(), rnd(rnd), alpha(alpha) {
+    reset();
+  }
+  void reset() {
+    policy[0].fill(0.0);
+    policy[1].fill(0.0);
+    policy_exp[0].fill(1.0);
+    policy_exp[1].fill(1.0);
+  }
+  virtual ~MCPPAScorer() = default;
+  int score(const Field& field, int id) override {
+    Simulator sim(field);
+    std::array<std::pair<int, int>, W> moves;
+    int p = sim.deduceExpectedPlayer(field);
+    assert(p == id);
+    std::array<std::pair<int, int>, W * H> history;
+    size_t chistory = 0;
+    while (sim.getState().winner == NO_PLAYER) {
+      size_t cmoves = 0;
+      for (int i = 0; i < W; ++i) {
+        if (sim.isValidAction(Action(p, i))) {
+          moves[cmoves] = {i, upperRow(sim.getState().field, i)};
+          cmoves += 1;
+        }
+      }
+      int i = get_move(moves, cmoves, p);
+      history[chistory++] = moves[i];
+      sim.makeAction({p, moves[i].first});
+      p = oppositePlayer(p);
+    }
+    int w = sim.getState().winner;
+    adapt(field, history, chistory, id, w);
+    if (w == id) return LARGE_SCORE;
+    if (w == oppositePlayer(id)) return -LARGE_SCORE;
+    assert(w == DRAW);
+    return 0;
+  }
+};
+
+template<typename Rnd>
+class MCIPPScorer : public Scorer { // donts works well yet
+protected:
+  Rnd& rnd;
+  virtual size_t rnd_index(size_t n) {
+    return std::uniform_int_distribution<size_t>(0, n - 1)(rnd);
+  }
+public:
+  MCIPPScorer(Rnd& rnd) : Scorer(), rnd(rnd) {}
+  virtual ~MCIPPScorer() = default;
+  int score(const Field& field, int id) override {
+    Simulator sim(field), psim;
+    std::array<int, W> moves;
+    std::array<int, W> pmoves;
+    size_t cpmoves = 0;
+    int p = sim.deduceExpectedPlayer(field);
+    int pmove;
+    while (sim.getState().winner == NO_PLAYER) {
+      int move = -1;
+      size_t cmoves = 0;
+      for (int i = 0; i < W; ++i) {
+        if (sim.isValidAction(Action(p, i))) {
+          Simulator s(sim);
+          s.makeAction(Action(p, i));
+          if (s.getState().winner == p) {
+            move = i;
+            break;
+          } else if (true || s.getState().winner != oppositePlayer(p)) {
+            // impossible to lose
+            moves[cmoves++] = i;
+          }
+        }
+      }
+      if (move == -1) {
+        move = moves[rnd_index(cmoves)];
+      } else if (cpmoves > 1) {
+        int i = std::find(pmoves.begin(), pmoves.begin() +
+            cpmoves, pmove) - pmoves.begin();
+        assert(i < cpmoves);
+        std::swap(pmoves[i], pmoves[--cpmoves]);
+        pmove = pmoves[rnd_index(cpmoves)];
+        p = oppositePlayer(p);
+        sim = psim;
+        sim.makeAction(Action(p, pmove));
+        p = oppositePlayer(p);
+        continue;
+      }
+      std::copy(moves.begin(), moves.begin() + cmoves, pmoves.begin());
+      cpmoves = cmoves;
+      psim = sim;
+      pmove = move;
+      sim.makeAction({p, move});
+      p = oppositePlayer(p);
+    }
+    int w = sim.getState().winner;
+    if (w == id) return LARGE_SCORE;
+    if (w == oppositePlayer(id)) return -LARGE_SCORE;
+    assert(w == DRAW);
+    return 0;
   }
 };
 

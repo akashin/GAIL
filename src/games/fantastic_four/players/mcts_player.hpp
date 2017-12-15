@@ -9,6 +9,7 @@
 #include "../../../core/player.hpp"
 #include "scorers.hpp"
 #include "score_utils.hpp"
+#include "simple_estimator.hpp"
 #include "hasher.hpp"
 #include "../clients.hpp"
 #include "../../../utils/config.hpp"
@@ -18,9 +19,10 @@ namespace fantastic_four {
 
 struct MCTSNode {
   PlayerState st;
+  MoveEstimator moveEstimator;
   std::array<MCTSNode*, W> child;
   int score, trials;
-  MCTSNode() :st(), score(0), trials(0) {
+  MCTSNode() :st(), moveEstimator(), score(0), trials(0) {
     child.fill(nullptr);
   }
 };
@@ -37,6 +39,7 @@ public:
     bucket_sims = config.get<int>("bucket_sims", 1);
     print_debug_info = config.get("print_debug_info", false);
     C = config.get("C", 1.0);
+    im_alpha = config.get("im_alpha", 0.5);
   }
 
 
@@ -78,9 +81,16 @@ public:
 private:
   MCTSNode* mcts(const PlayerState& state) {
     tree.clear();
+    if (auto ppascorer = dynamic_cast<MCPPAScorer<std::mt19937>*>(scorer.get())) {
+      ppascorer->reset();
+    }
     startTime = clock();
     HashField hf(state.field);
     auto* root = getNode(hf); root->st = state;
+    if (rnd == nullptr) {
+      MoveEstimator moveEstimator(state.field, state.player_id);
+      root->moveEstimator = moveEstimator;
+    }
     int sims = 0;
     while (true) {
       if (max_turn_sims && (sims += bucket_sims) > max_turn_sims) break;
@@ -118,8 +128,21 @@ private:
         else tree_moves[ntree++] = j;
       }
       if (nrand) {
-        int id = std::uniform_int_distribution<int>(0, nrand - 1)(*rnd);
-        int move = random_moves[id];
+        int move;
+        if (rnd) {
+          int id = std::uniform_int_distribution<int>(0, nrand - 1)(*rnd);
+          move = random_moves[id];
+        } else {
+          move = -1;
+          int best;
+          for (int i = 0; i < nrand; ++i) {
+            int score = t->moveEstimator.getScore(random_moves[i]);
+            if (move == -1 || best < score) {
+              move = random_moves[i];
+              best = score;
+            }
+          }
+        }
         auto hf = getHF(t);
         int row = upperRow(t->st.field, move);
         auto nhf = hf.make(t->st.player_id, row, move);
@@ -128,6 +151,9 @@ private:
         sim.makeAction(Action(t->st.player_id, move));
         auto next_state = sim.getState();
         p->st = PlayerState(next_state.winner, oppositePlayer(t->st.player_id), next_state.field);
+        if (rnd == nullptr) {
+          p->moveEstimator = t->moveEstimator.make(t->st.player_id, move, row);
+        }
         t = p;
         break;
       } else {
@@ -155,11 +181,30 @@ private:
 
   int getBestMove(MCTSNode* t) {
     int best = -1; double best_w;
+    int score_w = 0, score_n = 0;
+    if (rnd == nullptr) {
+      for (int i = 0; i < W; ++i) {
+        if (t->child[i] == nullptr) continue;
+        score_w += t->moveEstimator.getScore(i);
+        score_n += 1;
+      }
+    }
     for (int i = 0; i < W; ++i) {
       if (t->child[i] == nullptr) continue;
       auto* p = t->child[i];
       double w = -double(p->score) / p->trials;
-      w += C * sqrt(logf(t->trials) / p->trials);
+      if (rnd == nullptr) {
+        double pi = (double)t->moveEstimator.getScore(i) / score_w;
+        pi = pi * im_alpha + (1 - im_alpha) / score_n;
+        w += C * sqrt(logf(t->trials) / p->trials) * pi * score_n;
+      } else {
+        w += C * sqrt(logf(t->trials) / p->trials);
+      }
+      // w *= 1 - im_alpha;
+      // if (rnd == nullptr) {
+      //   w += t->moveEstimator.getScore(i) * im_alpha / score_w / (1 + p->trials);
+      // }
+      // w += C * sqrt(logf(t->trials) / p->trials);
       if (best == -1 || best_w < w) {
         best = i; best_w = w;
       }
@@ -189,6 +234,7 @@ private:
   std::unique_ptr<Rnd> rnd;
   std::unique_ptr<Scorer> scorer;
   std::map<HashField, MCTSNode> tree;
+  double im_alpha;
   clock_t startTime = 0;
 };
 
